@@ -10,11 +10,12 @@ budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement**
 - **Mobile:** Flutter (Android + iOS) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
-> **Status:** **M1 (foundation) + M2 (auth) implemented** on a Maven / Spring Boot 3 / Java 21
-> backend running against the Oracle ADB (schema `TRAVEL_MATE`). M2 adds email/password + Google
-> sign-in, JWT access tokens, DB-stored refresh tokens with rotation & reuse detection,
-> email-verify / password-reset, `/users/me`, FCM device registration, and rate-limit/CORS/body-size
-> hardening. **M3 (trips & members) is next.** The full source of truth is [`docs/SPEC.md`](docs/SPEC.md).
+> **Status:** **M1–M3 implemented** on a Maven / Spring Boot 3 / Java 21 backend running against the
+> Oracle ADB (schema `TRAVEL_MATE`). M2 = auth (email/password + Google, JWT + rotating refresh
+> tokens with reuse detection, verify/reset, `/users/me`, FCM devices, hardening). M3 = trips &
+> members (CRUD, central `TripAccessGuard` with `OWNER`/`EDITOR`/`VIEWER`, ghost members, invitation
+> link/QR with atomic accept + ghost→real merge). **M4 (planning) is next.** The full source of truth
+> is [`docs/SPEC.md`](docs/SPEC.md).
 
 ---
 
@@ -115,7 +116,7 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
 1. **M1 — Foundation ✅:** skeleton, `BaseEntity`, JPA auditing, soft delete, Flyway, exception
    handler, envelope response, Testcontainers from day one.
 2. **M2 — Auth ✅:** email/password + Google + JWT/refresh + verify/reset; `users/me`; FCM devices.
-3. **M3 — Trip & members:** CRUD, ghost members, invitation link/QR, `@RequireTripRole`.
+3. **M3 — Trip & members ✅:** CRUD, ghost members, invitation link/QR, central `TripAccessGuard`.
 4. **M4 — Planning:** places, events, transport, accommodation, checklist.
 5. **M5 — Money:** rate snapshot, budget, expense + shares.
 6. **M6 — Fund & settlement:** contributions/expenses, derived balance, settlement engine.
