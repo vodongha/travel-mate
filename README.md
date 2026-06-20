@@ -10,10 +10,11 @@ budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement**
 - **Mobile:** Flutter (Android + iOS) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
-> **Status:** **M1 (foundation) implemented** — a Maven / Spring Boot 3 / Java 21 skeleton with
-> `BaseEntity`, JPA auditing, UUID v7 RIDs, `MoneyService`, the RFC 7807 response envelope, a Flyway
-> baseline and a Testcontainers harness; it runs against the Oracle ADB (schema `TRAVEL_MATE`).
-> **M2 (auth) is next.** The full source of truth is [`docs/SPEC.md`](docs/SPEC.md).
+> **Status:** **M1 (foundation) + M2 (auth) implemented** on a Maven / Spring Boot 3 / Java 21
+> backend running against the Oracle ADB (schema `TRAVEL_MATE`). M2 adds email/password + Google
+> sign-in, JWT access tokens, DB-stored refresh tokens with rotation & reuse detection,
+> email-verify / password-reset, `/users/me`, FCM device registration, and rate-limit/CORS/body-size
+> hardening. **M3 (trips & members) is next.** The full source of truth is [`docs/SPEC.md`](docs/SPEC.md).
 
 ---
 
@@ -113,7 +114,7 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
 
 1. **M1 — Foundation ✅:** skeleton, `BaseEntity`, JPA auditing, soft delete, Flyway, exception
    handler, envelope response, Testcontainers from day one.
-2. **M2 — Auth:** email/password + Google + JWT/refresh + verify/reset; `users/me`; FCM devices.
+2. **M2 — Auth ✅:** email/password + Google + JWT/refresh + verify/reset; `users/me`; FCM devices.
 3. **M3 — Trip & members:** CRUD, ghost members, invitation link/QR, `@RequireTripRole`.
 4. **M4 — Planning:** places, events, transport, accommodation, checklist.
 5. **M5 — Money:** rate snapshot, budget, expense + shares.

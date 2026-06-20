@@ -10,10 +10,13 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST, "Validation failed"),
+    TOKEN_INVALID(HttpStatus.BAD_REQUEST, "Invalid or expired token"),
     UNAUTHENTICATED(HttpStatus.UNAUTHORIZED, "Authentication required"),
     FORBIDDEN(HttpStatus.FORBIDDEN, "Insufficient permission"),
     NOT_FOUND(HttpStatus.NOT_FOUND, "Resource not found"),
     CONFLICT(HttpStatus.CONFLICT, "Conflict"),
+    PAYLOAD_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "Request body too large"),
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
     OPTIMISTIC_LOCK(HttpStatus.CONFLICT, "Resource was modified concurrently"),
     IDEMPOTENCY_CONFLICT(HttpStatus.UNPROCESSABLE_ENTITY, "Idempotency key reused with a different payload"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");

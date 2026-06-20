@@ -13,9 +13,13 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
 - **Host (planned):** Oracle Cloud Always Free VM (Ampere A1 preferred — JVM needs the RAM)
-- **Status:** **M1 (foundation) implemented** — Maven/Spring Boot skeleton, `BaseEntity`, JPA
-  auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway baseline, Testcontainers harness.
-  Runs against the Oracle ADB (schema `TRAVEL_MATE`). **M2 (auth) is next.**
+- **Status:** **M1 (foundation) + M2 (auth) implemented.** M1: Maven/Spring Boot skeleton,
+  `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway, Testcontainers.
+  M2: USERS/USER_DEVICES/AUTH_TOKENS (V2), BCrypt + JWT access, DB refresh tokens with rotation &
+  reuse detection, Google ID-token verify, email-verify/password-reset, `/users/me`, FCM device
+  registration, rate-limit/CORS/body-size hardening. Email sending is a dev `LoggingEmailSender`
+  stub (real provider = Open Decision #4, deferred). Runs against the Oracle ADB (schema
+  `TRAVEL_MATE`). **M3 (trips & members) is next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
