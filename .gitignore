@@ -1,0 +1,62 @@
+# Build output
+target/
+build/
+out/
+bin/
+!**/src/**/bin/
+!**/src/**/build/
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# Maven (kept in case the skeleton uses Maven)
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+
+# Java / JVM
+*.class
+hs_err_pid*
+replay_pid*
+
+# Env & secrets — NEVER commit
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-local.properties
+application-secret.yml
+
+# Oracle ADB wallet — NEVER commit
+wallet/
+*.sso
+*.p12
+*.pem
+*.jks
+tnsnames.ora
+sqlnet.ora
+ojdbc.properties
+
+# Firebase service account — NEVER commit
+**/firebase-service-account.json
+**/google-services.json
+
+# Local data
+*.sqlite
+*.db
+.DS_Store
+*.log
