@@ -10,9 +10,10 @@ budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement**
 - **Mobile:** Flutter (Android + iOS) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
-> **Status:** specification complete (the source of truth is [`docs/SPEC.md`](docs/SPEC.md)).
-> Implementation has not started — milestone **M1 (foundation)** is next. The build tool
-> (Gradle/Maven) is chosen when the M1 skeleton lands.
+> **Status:** **M1 (foundation) implemented** — a Maven / Spring Boot 3 / Java 21 skeleton with
+> `BaseEntity`, JPA auditing, UUID v7 RIDs, `MoneyService`, the RFC 7807 response envelope, a Flyway
+> baseline and a Testcontainers harness; it runs against the Oracle ADB (schema `TRAVEL_MATE`).
+> **M2 (auth) is next.** The full source of truth is [`docs/SPEC.md`](docs/SPEC.md).
 
 ---
 
@@ -84,22 +85,33 @@ Each module is a vertical slice: `*Controller → *Service → *Repository → *
 
 ## Quick start
 
-> The runnable project (build tool + `src/`) lands with milestone **M1**. Until then this repo
-> holds the specification and conventions only.
-
-Planned local-run shape (subject to the M1 skeleton):
+Requires **JDK 21**. The build uses the bundled Maven wrapper (`./mvnw`) — no local Maven needed.
 
 ```bash
-cp .env.example .env          # Oracle wallet path/password, JWT secret, Google client id, FCM
+# 1. Unit tests (no database / Docker needed)
+./mvnw test
+
+# 2. Integration tests (Testcontainers — needs a running Docker daemon)
+./mvnw verify
+
+# 3. Run against the Oracle ADB
+cp .env.example .env                         # set ORACLE_PASSWORD, DSN, etc.
 # place the unzipped ADB wallet under ./wallet/  (gitignored — never commit)
-./gradlew bootRun             # or ./mvnw spring-boot:run
+# one-time: create the app's schema as ADMIN (OCI → Database Actions → SQL):
+#   scripts/create_schema.sql   (creates schema-only user TRAVEL_MATE)
+SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run
+# then: curl http://localhost:8000/api/v1/ping  ->  {"data":{"status":"ok"}}
 ```
+
+The app connects as `ADMIN` via the wallet and switches `CURRENT_SCHEMA` to `TRAVEL_MATE`, so
+several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.example` and
+`src/main/resources/application-local.yml.example`.
 
 ---
 
 ## Milestones (see [`docs/SPEC.md`](docs/SPEC.md) §9)
 
-1. **M1 — Foundation:** skeleton, `BaseEntity`, JPA auditing, soft delete, Flyway, exception
+1. **M1 — Foundation ✅:** skeleton, `BaseEntity`, JPA auditing, soft delete, Flyway, exception
    handler, envelope response, Testcontainers from day one.
 2. **M2 — Auth:** email/password + Google + JWT/refresh + verify/reset; `users/me`; FCM devices.
 3. **M3 — Trip & members:** CRUD, ghost members, invitation link/QR, `@RequireTripRole`.

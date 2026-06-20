@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: travel-mate
+  datasource:
+    # Provided via environment (see CLAUDE.md "No secrets in code"); Oracle ADB in prod,
+    # a Testcontainers-managed Oracle Free instance in integration tests.
+    url: ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Never `update` — schema is owned by Flyway. `validate` asserts entities match the DB.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          # Oracle TIMESTAMP carries no zone; store everything UTC (SPEC §2.5).
+          time_zone: UTC
+        format_sql: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8000}
+
+logging:
+  level:
+    org.flywaydb: info

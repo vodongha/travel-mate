@@ -13,7 +13,9 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
 - **Host (planned):** Oracle Cloud Always Free VM (Ampere A1 preferred — JVM needs the RAM)
-- **Status:** specification complete; implementation not started. **M1 (foundation) is next.**
+- **Status:** **M1 (foundation) implemented** — Maven/Spring Boot skeleton, `BaseEntity`, JPA
+  auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway baseline, Testcontainers harness.
+  Runs against the Oracle ADB (schema `TRAVEL_MATE`). **M2 (auth) is next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
@@ -38,7 +40,7 @@ The architecture mirrors a layered service design (the author's day-job pattern)
 | Exchange rates | Free provider (frankfurter.app / exchangerate.host), cached per day, manual override allowed |
 | Errors | RFC 7807 `ProblemDetail` (Spring Boot 3 built-in) |
 | Tests | JUnit 5 + **Testcontainers** (integration, from M1) |
-| Build tool | **TBD — Gradle or Maven, decided when the M1 skeleton lands** (`.gitignore` covers both) |
+| Build tool | **Maven** (chosen at the M1 skeleton; mirrors the day-job enterprise-Spring pattern). Use `./mvnw` |
 
 ## Money rules (non-negotiable)
 
