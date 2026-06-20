@@ -27,15 +27,18 @@ public class EventService {
     private final PlaceRepository placeRepository;
     private final PlaceService placeService;
     private final TripAccessGuard guard;
+    private final com.travelmate.notification.NotificationService notificationService;
 
     public EventService(EventRepository eventRepository,
                         PlaceRepository placeRepository,
                         PlaceService placeService,
-                        TripAccessGuard guard) {
+                        TripAccessGuard guard,
+                        com.travelmate.notification.NotificationService notificationService) {
         this.eventRepository = eventRepository;
         this.placeRepository = placeRepository;
         this.placeService = placeService;
         this.guard = guard;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +74,7 @@ public class EventService {
         event.setPlaceId(placeService.resolvePlaceId(request.placeRid(), trip.getId()));
         event.setNote(request.note());
         event = eventRepository.save(event);
+        notificationService.rescheduleEvent(trip, event);
         return EventResponse.from(event, request.placeRid());
     }
 
@@ -104,13 +108,16 @@ public class EventService {
                     : placeService.resolvePlaceId(request.placeRid(), trip.getId()));
         }
         validateTimes(event.getStartTime(), event.getEndTime());
+        notificationService.rescheduleEvent(trip, event);
         return EventResponse.from(event, placeRidOf(event.getPlaceId()));
     }
 
     @Transactional
     public void delete(Long userId, String tripRid, String eventRid) {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.EDITOR).trip();
-        loadInTrip(eventRid, trip.getId()).setDeleted(true);
+        Event event = loadInTrip(eventRid, trip.getId());
+        event.setDeleted(true);
+        notificationService.cancelEvent(event.getId());
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
