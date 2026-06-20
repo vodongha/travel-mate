@@ -29,9 +29,14 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
   - **M7** dashboard & report: `GET /trips/{tripRid}/dashboard` (countdown, total budget, total
     spent, fund balance, next event) and `GET /trips/{tripRid}/report` (budget vs actual per
     category, unexpected list, debts from settlement). Read-only; reuses `FundService` + `SettlementService`.
+  - **M8** notifications: `SCHEDULED_NOTIFICATIONS` (V7); generated on trip/event change
+    (pre-trip 30/7/1-day countdowns, debt reminder, event reminder, hotel check-in), drained by a
+    `@Scheduled` dispatcher (idempotent PENDING→SENT/FAILED) that pushes via an `FcmSender`. FCM
+    sending is a dev `LoggingFcmSender` stub (real Firebase Admin SDK = drop-in, needs a service
+    account, deferred); single-instance (add ShedLock if multi-instance).
 
   Integration tests (`*IT`) run against a docker-compose Oracle Free (`docker compose up -d` →
-  `./mvnw verify`); see CLAUDE "Testing". **M8 (scheduled notifications + FCM) is next.**
+  `./mvnw verify`); see CLAUDE "Testing". **M9 (Flutter app — Android + Web) is next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins

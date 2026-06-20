@@ -39,6 +39,8 @@ public abstract class AbstractIntegrationTest {
         // single test client IP don't trip the limiter across the shared context.
         registry.add("app.jwt.secret", () -> "integration-test-secret-at-least-32-bytes-long");
         registry.add("app.ratelimit.capacity", () -> 1_000_000);
+        // Tests drive the dispatcher directly; keep the background poller off for determinism.
+        registry.add("app.notifications.scheduler-enabled", () -> "false");
     }
 
     /** Wipe + re-migrate the schema once per test run so a reused compose DB stays deterministic. */

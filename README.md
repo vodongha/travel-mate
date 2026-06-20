@@ -10,12 +10,13 @@ budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement**
 - **Mobile:** Flutter (Android + iOS) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
-> **Status:** **M1–M7 implemented** on a Maven / Spring Boot 3 / Java 21 backend running against
+> **Status:** **M1–M8 implemented** on a Maven / Spring Boot 3 / Java 21 backend running against
 > Oracle (schema `TRAVEL_MATE`): foundation, auth, trips & members, planning (places/events/
 > transport/accommodation/checklist), money (budget + multi-currency expenses with snapshot rates +
 > splitting), shared fund & settlement, and the dashboard + end-of-trip report. Integration tests
-> run against a docker-compose Oracle Free (`docker compose up -d` → `./mvnw verify`). **M8
-> (scheduled notifications) is next.** The full source of truth is [`docs/SPEC.md`](docs/SPEC.md).
+> run against a docker-compose Oracle Free (`docker compose up -d` → `./mvnw verify`), and scheduled
+> notifications (reminders + FCM dispatch). **M9 (Flutter app — Android + Web) is next.** The full
+> source of truth is [`docs/SPEC.md`](docs/SPEC.md).
 
 ---
 
@@ -121,7 +122,7 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
 5. **M5 — Money ✅:** rate snapshot, budget, expense + shares.
 6. **M6 — Fund & settlement ✅:** contributions/expenses, derived balance, settlement engine.
 7. **M7 — Dashboard & report ✅.**
-8. **M8 — Notifications:** scheduled FCM job.
+8. **M8 — Notifications ✅:** scheduled reminders + idempotent FCM dispatch job.
 9. **M9 — Flutter app.**
 
 ---
