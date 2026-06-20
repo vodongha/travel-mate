@@ -19,6 +19,7 @@ public enum ErrorCode {
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many requests"),
     OPTIMISTIC_LOCK(HttpStatus.CONFLICT, "Resource was modified concurrently"),
     IDEMPOTENCY_CONFLICT(HttpStatus.UNPROCESSABLE_ENTITY, "Idempotency key reused with a different payload"),
+    EXCHANGE_RATE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "Exchange rate unavailable"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
 
     private final HttpStatus status;
