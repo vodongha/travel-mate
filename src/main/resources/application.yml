@@ -37,7 +37,9 @@ app:
     access-ttl: PT60M
     issuer: travel-mate
   google:
-    client-id: ${GOOGLE_CLIENT_ID:}
+    # The project's **Web** OAuth client id — must equal the app's serverClientId so the Google ID
+    # token's `aud` matches. Public value (safe as a default); override with env GOOGLE_CLIENT_ID.
+    client-id: ${GOOGLE_CLIENT_ID:542406829306-4f37t1brg750jdoksjidh197hkbopnuj.apps.googleusercontent.com}
   cors:
     # Comma-separated origin whitelist (no '*' with credentials). Empty = no browser origins
     # allowed (native mobile clients don't send Origin and are unaffected).
