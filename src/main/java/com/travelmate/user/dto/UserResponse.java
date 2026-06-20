@@ -9,9 +9,11 @@ public record UserResponse(
         String email,
         String name,
         String avatar,
+        String phone,
         String timezone,
         String defaultCurrency,
         boolean emailVerified,
+        boolean hasPassword,
         AuthProvider provider) {
 
     public static UserResponse from(User user) {
@@ -20,9 +22,11 @@ public record UserResponse(
                 user.getEmail(),
                 user.getName(),
                 user.getAvatar(),
+                user.getPhone(),
                 user.getTimezone(),
                 user.getDefaultCurrency(),
                 user.isEmailVerified(),
+                user.hasPassword(),
                 user.getProvider());
     }
 }

@@ -29,6 +29,16 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
   - **M7** dashboard & report: `GET /trips/{tripRid}/dashboard` (countdown, total budget, total
     spent, fund balance, next event) and `GET /trips/{tripRid}/report` (budget vs actual per
     category, unexpected list, debts from settlement). Read-only; reuses `FundService` + `SettlementService`.
+  - **Settings support** (slice for the Flutter app): public bilingual privacy page
+    `GET /api/v1/privacy?lang=vi|en` (router-only `com.travelmate.legal`, framable — no
+    `X-Frame-Options`, served via its own `@Order(1)` `SecurityFilterChain`); `POST
+    /auth/change-password` (sets the first password for a Google-only account, else verifies the
+    current one); `USERS.PHONE` (V8) + `phone`/display-currency on `GET/PATCH /users/me` and
+    `hasPassword`/`emailVerified` on the response; `DELETE /users/me` (soft-delete + revoke refresh
+    tokens — `JwtAuthenticationFilter` now also checks the user still exists so a live token for a
+    deleted account is rejected); and an exchange-rate table `GET /rates` + `POST /rates/refresh`
+    (`com.travelmate.common.money.ExchangeRateCache`, in-memory, base VND, refreshed every 12h by a
+    cron `@Scheduled` job, reuses `FrankfurterExchangeRateProvider`, `503` if the source is down).
   - **M8** notifications: `SCHEDULED_NOTIFICATIONS` (V7); generated on trip/event change
     (pre-trip 30/7/1-day countdowns, debt reminder, event reminder, hotel check-in), drained by a
     `@Scheduled` dispatcher (idempotent PENDING→SENT/FAILED) that pushes via an `FcmSender`. FCM
