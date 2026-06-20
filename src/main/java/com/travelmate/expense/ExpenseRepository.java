@@ -20,4 +20,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT COALESCE(SUM(e.amountBase), 0) FROM Expense e "
             + "WHERE e.tripId = :tripId AND e.paidFromFund = true")
     BigDecimal sumFundPaidAmountBaseByTrip(@Param("tripId") Long tripId);
+
+    /** Total of every expense (personal + fund-paid), each counted once — used by dashboard/report. */
+    @Query("SELECT COALESCE(SUM(e.amountBase), 0) FROM Expense e WHERE e.tripId = :tripId")
+    BigDecimal sumAmountBaseByTrip(@Param("tripId") Long tripId);
 }

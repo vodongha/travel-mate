@@ -13,16 +13,25 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
 - **Host (planned):** Oracle Cloud Always Free VM (Ampere A1 preferred — JVM needs the RAM)
-- **Status:** **M1 (foundation) + M2 (auth) implemented.** M1: Maven/Spring Boot skeleton,
-  `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway, Testcontainers.
-  M2: USERS/USER_DEVICES/AUTH_TOKENS (V2), BCrypt + JWT access, DB refresh tokens with rotation &
-  reuse detection, Google ID-token verify, email-verify/password-reset, `/users/me`, FCM device
-  registration, rate-limit/CORS/body-size hardening. Email sending is a dev `LoggingEmailSender`
-  stub (real provider = Open Decision #4, deferred). M3: TRIPS/TRIP_MEMBERS/TRIP_INVITATIONS (V3),
-  trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 / 403), ghost members,
-  invitation link/QR token with atomic accept + in-place ghost→real merge. Runs against the Oracle
-  ADB (schema `TRAVEL_MATE`). **M4 (planning: places/events/transport/accommodation/checklist) is
-  next.**
+- **Status:** **M1–M7 implemented** (Maven/Spring Boot 3/Java 21, Oracle, schema `TRAVEL_MATE`).
+  - **M1** foundation: `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway.
+  - **M2** auth: BCrypt + JWT access, DB refresh tokens (rotation + reuse detection), Google ID-token
+    verify, email-verify/password-reset, `/users/me`, FCM devices, rate-limit/CORS/body-size hardening.
+    Email sending is a dev `LoggingEmailSender` stub (real provider = Open Decision #4, deferred).
+  - **M3** trips & members: trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 /
+    403), ghost members, invitation link/QR with atomic accept + in-place ghost→real merge.
+  - **M4** planning: places, events (timeline), transport, accommodation (with `QR_DATA` string),
+    checklist.
+  - **M5** money: budget per category, multi-currency expense with snapshot rate (manual override or
+    frankfurter, cached daily), `ExpenseSplitter` on integer minor units (EQUAL/EXACT/PERCENT/SHARES).
+  - **M6** fund & settlement: contributions/fund-expenses, derived fund balance, `SettlementEngine`
+    (greedy min-cash-flow on minor units; fund kept separate from personal settlement).
+  - **M7** dashboard & report: `GET /trips/{tripRid}/dashboard` (countdown, total budget, total
+    spent, fund balance, next event) and `GET /trips/{tripRid}/report` (budget vs actual per
+    category, unexpected list, debts from settlement). Read-only; reuses `FundService` + `SettlementService`.
+
+  Integration tests (`*IT`) run against a docker-compose Oracle Free (`docker compose up -d` →
+  `./mvnw verify`); see CLAUDE "Testing". **M8 (scheduled notifications + FCM) is next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
