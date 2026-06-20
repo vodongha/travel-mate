@@ -134,6 +134,13 @@
             <artifactId>oracle-free</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Apache HttpClient 5 on the test classpath makes TestRestTemplate support PATCH
+             (the JDK's default request factory does not), used by the planning/expense IT tests. -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
