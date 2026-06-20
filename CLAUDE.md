@@ -13,7 +13,30 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
 - **Host (planned):** Oracle Cloud Always Free VM (Ampere A1 preferred — JVM needs the RAM)
-- **Status:** specification complete; implementation not started. **M1 (foundation) is next.**
+- **Status:** **M1–M7 implemented** (Maven/Spring Boot 3/Java 21, Oracle, schema `TRAVEL_MATE`).
+  - **M1** foundation: `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway.
+  - **M2** auth: BCrypt + JWT access, DB refresh tokens (rotation + reuse detection), Google ID-token
+    verify, email-verify/password-reset, `/users/me`, FCM devices, rate-limit/CORS/body-size hardening.
+    Email sending is a dev `LoggingEmailSender` stub (real provider = Open Decision #4, deferred).
+  - **M3** trips & members: trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 /
+    403), ghost members, invitation link/QR with atomic accept + in-place ghost→real merge.
+  - **M4** planning: places, events (timeline), transport, accommodation (with `QR_DATA` string),
+    checklist.
+  - **M5** money: budget per category, multi-currency expense with snapshot rate (manual override or
+    frankfurter, cached daily), `ExpenseSplitter` on integer minor units (EQUAL/EXACT/PERCENT/SHARES).
+  - **M6** fund & settlement: contributions/fund-expenses, derived fund balance, `SettlementEngine`
+    (greedy min-cash-flow on minor units; fund kept separate from personal settlement).
+  - **M7** dashboard & report: `GET /trips/{tripRid}/dashboard` (countdown, total budget, total
+    spent, fund balance, next event) and `GET /trips/{tripRid}/report` (budget vs actual per
+    category, unexpected list, debts from settlement). Read-only; reuses `FundService` + `SettlementService`.
+  - **M8** notifications: `SCHEDULED_NOTIFICATIONS` (V7); generated on trip/event change
+    (pre-trip 30/7/1-day countdowns, debt reminder, event reminder, hotel check-in), drained by a
+    `@Scheduled` dispatcher (idempotent PENDING→SENT/FAILED) that pushes via an `FcmSender`. FCM
+    sending is a dev `LoggingFcmSender` stub (real Firebase Admin SDK = drop-in, needs a service
+    account, deferred); single-instance (add ShedLock if multi-instance).
+
+  Integration tests (`*IT`) run against a docker-compose Oracle Free (`docker compose up -d` →
+  `./mvnw verify`); see CLAUDE "Testing". **M9 (Flutter app — Android + Web) is next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
@@ -38,7 +61,7 @@ The architecture mirrors a layered service design (the author's day-job pattern)
 | Exchange rates | Free provider (frankfurter.app / exchangerate.host), cached per day, manual override allowed |
 | Errors | RFC 7807 `ProblemDetail` (Spring Boot 3 built-in) |
 | Tests | JUnit 5 + **Testcontainers** (integration, from M1) |
-| Build tool | **TBD — Gradle or Maven, decided when the M1 skeleton lands** (`.gitignore` covers both) |
+| Build tool | **Maven** (chosen at the M1 skeleton; mirrors the day-job enterprise-Spring pattern). Use `./mvnw` |
 
 ## Money rules (non-negotiable)
 

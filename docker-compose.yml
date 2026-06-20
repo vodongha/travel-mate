@@ -1,0 +1,32 @@
+# Local Oracle Free for integration tests (and optional local dev), driven by the docker CLI.
+# We use a compose-managed Oracle instead of Testcontainers because Testcontainers' docker-java
+# can't talk to this machine's Docker Desktop over npipe (HTTP 400 on /info); the docker CLI works.
+#
+#   docker compose up -d            # start Oracle (first run pulls the image + ~30-60s to healthy)
+#   docker compose ps               # STATUS should show "healthy"
+#   ./mvnw verify                   # integration tests connect to localhost:1521 (see AbstractIntegrationTest)
+#   docker compose down             # stop (add -v to also wipe the data volume)
+#
+# The integration tests run `flyway clean + migrate` on startup, so a reused container always
+# starts each test run from a clean schema. App user is test/test on service FREEPDB1.
+services:
+  oracle:
+    image: gvenzl/oracle-free:slim-faststart
+    container_name: travelmate-oracle
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: test          # SYS/SYSTEM password
+      APP_USER: test                 # app schema the tests connect as
+      APP_USER_PASSWORD: test
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+
+volumes:
+  oracle-data:

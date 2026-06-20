@@ -1,0 +1,14 @@
+-- V1 — Baseline (M1 foundation).
+--
+-- M1 establishes the project skeleton, the shared BaseEntity contract, JPA auditing, the response
+-- envelope, error handling and the Testcontainers harness. No business tables exist yet — the
+-- USERS / AUTH_TOKENS / USER_DEVICES schema lands in M2, trips & members in M3, and so on (SPEC §6).
+--
+-- This empty baseline pins Flyway version 1 so every later migration (V2, V3, ...) builds on a
+-- known starting point. Conventions every business table must follow (SPEC §2):
+--   * base columns: ID, RID, CREATED_AT/BY, UPDATED_AT/BY, VERSION, IS_DELETED
+--   * RID is UUID v7 generated in Java (UuidV7Generator), UNIQUE per table (UK_<TABLE>_RID)
+--   * money is NUMBER(19,4), rates NUMBER(19,8); never float
+--   * soft delete via IS_DELETED NUMBER(1) DEFAULT 0; business uniques are function-based partial
+--     indexes that only apply WHEN IS_DELETED = 0
+SELECT 1 FROM DUAL;
