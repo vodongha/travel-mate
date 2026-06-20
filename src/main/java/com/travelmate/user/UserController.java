@@ -9,6 +9,7 @@ import com.travelmate.user.dto.UpdateMeRequest;
 import com.travelmate.user.dto.UserResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,5 +45,12 @@ public class UserController {
     public ApiResponse<DeviceResponse> registerDevice(@CurrentUser AuthPrincipal principal,
                                                       @Valid @RequestBody RegisterDeviceRequest request) {
         return ApiResponse.ok(userService.registerDevice(principal.id(), request));
+    }
+
+    /** Self-service account deletion: soft-delete the account and revoke its sessions. 204. */
+    @DeleteMapping
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteMe(@CurrentUser AuthPrincipal principal) {
+        userService.deleteMe(principal.id());
     }
 }
