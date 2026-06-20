@@ -1,0 +1,76 @@
+name: Deploy
+
+# On a release to master: run the full test suite, then build the Flutter web client (from the
+# private travel-mate-app repo) into ./web-dist and deploy the single-origin image to Fly.io.
+on:
+  push:
+    branches: [master]
+
+jobs:
+  verify:
+    name: Test (mvn verify)
+    runs-on: ubuntu-latest
+    services:
+      oracle:
+        image: gvenzl/oracle-free:slim-faststart
+        env:
+          ORACLE_PASSWORD: test
+          APP_USER: test
+          APP_USER_PASSWORD: test
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd "healthcheck.sh"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 40
+    env:
+      IT_DB_URL: jdbc:oracle:thin:@localhost:1521/FREEPDB1
+      IT_DB_USERNAME: test
+      IT_DB_PASSWORD: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - run: mvn -B verify
+
+  deploy:
+    name: Deploy to Fly.io
+    needs: [verify]
+    runs-on: ubuntu-latest
+    concurrency: deploy-group # prevent overlapping deploys
+    steps:
+      - name: Checkout backend
+        uses: actions/checkout@v4
+
+      - name: Checkout app (web client)
+        uses: actions/checkout@v4
+        with:
+          repository: vodongha/travel-mate-app
+          ref: master
+          token: ${{ secrets.APP_REPO_TOKEN }}
+          path: app-src
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Build Flutter web (same-origin → trippo.io.vn)
+        working-directory: app-src
+        run: |
+          flutter pub get
+          flutter build web --release --no-tree-shake-icons \
+            --dart-define=API_BASE_URL=https://trippo.io.vn
+
+      - name: Stage web client into the image context
+        run: |
+          rm -rf web-dist && mkdir -p web-dist
+          cp -r app-src/build/web/. web-dist/
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
