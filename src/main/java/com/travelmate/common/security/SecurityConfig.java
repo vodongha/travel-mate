@@ -3,6 +3,7 @@ package com.travelmate.common.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,7 +35,27 @@ public class SecurityConfig {
         this.problemHandlers = problemHandlers;
     }
 
+    /**
+     * Dedicated chain for the public privacy page. It runs first (lower order) and matches only
+     * {@code GET /api/v1/privacy}: no auth, and — crucially — {@code X-Frame-Options} is disabled so
+     * the Flutter in-app WebView and a web {@code <iframe>} can frame it. The default chain keeps
+     * frame protection for everything else.
+     */
     @Bean
+    @Order(1)
+    SecurityFilterChain privacyFilterChain(HttpSecurity http) throws Exception {
+        // Only GET maps for this path (LegalController), so matching the path alone is sufficient.
+        http
+                .securityMatcher("/api/v1/privacy")
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()));
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource)
             throws Exception {
         http
@@ -42,8 +63,12 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Change-password is authenticated even though it lives under /auth/* —
+                        // this matcher must precede the /auth/** permitAll below.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/change-password").authenticated()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ping").permitAll()
+                        // GET /api/v1/privacy is handled by privacyFilterChain (order 1).
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(problemHandlers.authenticationEntryPoint())

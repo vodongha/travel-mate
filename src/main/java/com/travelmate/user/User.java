@@ -27,6 +27,10 @@ public class User extends BaseEntity {
     @Column(name = "AVATAR", length = 500)
     private String avatar;
 
+    /** Optional E.164-ish phone (nullable; Oracle stores '' as NULL, so never write ""). */
+    @Column(name = "PHONE", length = 32)
+    private String phone;
+
     @Column(name = "TIMEZONE", nullable = false, length = 64)
     private String timezone = "Asia/Ho_Chi_Minh";
 
@@ -73,6 +77,19 @@ public class User extends BaseEntity {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    /** True when this account can log in with a password (i.e. has a hash set). */
+    public boolean hasPassword() {
+        return passwordHash != null && !passwordHash.isBlank();
     }
 
     public String getTimezone() {
