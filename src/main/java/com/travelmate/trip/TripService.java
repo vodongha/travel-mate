@@ -26,14 +26,18 @@ public class TripService {
     private final TripAccessGuard guard;
     private final UserRepository userRepository;
 
+    private final com.travelmate.notification.NotificationService notificationService;
+
     public TripService(TripRepository tripRepository,
                        TripMemberRepository tripMemberRepository,
                        TripAccessGuard guard,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       com.travelmate.notification.NotificationService notificationService) {
         this.tripRepository = tripRepository;
         this.tripMemberRepository = tripMemberRepository;
         this.guard = guard;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -70,6 +74,7 @@ public class TripService {
         ownerMember.setJoinedAt(Instant.now());
         tripMemberRepository.save(ownerMember);
 
+        notificationService.rescheduleTrip(trip);
         return TripResponse.from(trip, MemberRole.OWNER);
     }
 
@@ -118,6 +123,7 @@ public class TripService {
             trip.setStatus(request.status());
         }
         validateDates(trip.getStartDate(), trip.getEndDate());
+        notificationService.rescheduleTrip(trip);
         return TripResponse.from(trip, ctx.membership().getRole());
     }
 
