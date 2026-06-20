@@ -43,7 +43,6 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/api/v1/invitations/*/accept").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/ping").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
