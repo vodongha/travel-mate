@@ -31,5 +31,9 @@ public abstract class AbstractIntegrationTest {
         registry.add("spring.datasource.url", ORACLE::getJdbcUrl);
         registry.add("spring.datasource.username", ORACLE::getUsername);
         registry.add("spring.datasource.password", ORACLE::getPassword);
+        // Deterministic JWT secret + effectively-unlimited rate limit so many auth calls from the
+        // single test client IP don't trip the limiter across the shared context.
+        registry.add("app.jwt.secret", () -> "integration-test-secret-at-least-32-bytes-long");
+        registry.add("app.ratelimit.capacity", () -> 1_000_000);
     }
 }

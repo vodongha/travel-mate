@@ -7,7 +7,8 @@
 
 ## 0. Mục tiêu & phạm vi
 
-- App di động cho **nhóm đi chung** (gia đình, bạn bè, công tác).
+- App cho **nhóm đi chung** (gia đình, bạn bè, công tác), chạy **đa nền tảng: Android + Web** (Flutter, một codebase, responsive) — KHÔNG chỉ Android như family-budget.
+- **UI phải luôn hiện đại** (Material 3, responsive, polished) trên mọi nền tảng.
 - Lập kế hoạch chuyến đi (timeline, di chuyển, lưu trú, checklist).
 - Quản lý **ngân sách dự kiến** vs **chi tiêu thực tế**, **quỹ chung**, và **chia tiền/công nợ**.
 - Hỗ trợ **đa tiền tệ** với tỷ giá snapshot.
@@ -19,7 +20,7 @@
 
 | Layer | Công nghệ |
 |---|---|
-| Mobile | Flutter (stable mới nhất), `flutter_map` (OpenStreetMap), `firebase_messaging` |
+| Client | Flutter (stable mới nhất) — **Android + Web** (responsive, Material 3, UI hiện đại), `flutter_map` (OpenStreetMap), `firebase_messaging`, render QR client-side từ chuỗi (vd `qr_flutter`) |
 | Backend | Spring Boot 3.x, Java 21, Spring Web, Spring Security, Spring Data JPA, Spring Validation |
 | Scheduler | Spring `@Scheduled` (hoặc Quartz nếu cần cluster) |
 | Database | Oracle Autonomous Database Free **hoặc** PostgreSQL (xem Mục 13 về đánh đổi) |
@@ -81,6 +82,11 @@ IS_DELETED    NUMBER(1)      DEFAULT 0 — soft delete
 ### 2.6. Audit & versioning
 - Optimistic lock qua `@Version` trên `VERSION`.
 - Khi update bị `OptimisticLockException` → trả `409 Conflict`.
+
+### 2.7. Mã QR — lưu CHUỖI, không lưu ảnh (BẮT BUỘC)
+- Vé/booking có mã QR: client **scan QR → lấy chuỗi đã giải mã → gửi chuỗi** lên server; server **chỉ lưu chuỗi** (cột `QR_DATA`).
+- Khi user xem: client **tự sinh lại QR từ chuỗi** (vd `qr_flutter`). **Không bao giờ lưu ảnh QR** (tốn dung lượng, khó tái dùng).
+- Áp dụng cho vé (Transport/Accommodation — Module 6/7) và **link mời nhóm** (Module 3: server trả token/URL dạng chuỗi, client render QR).
 
 ---
 
@@ -324,6 +330,7 @@ TRANSPORTS
   ARRIVAL_PLACE    VARCHAR2(300)
   DEPARTURE_TIME   TIMESTAMP (UTC)
   ARRIVAL_TIME     TIMESTAMP (UTC)
+  QR_DATA          VARCHAR2(4000)  -- chuỗi giải mã từ QR vé (Mục 2.7); client tự render QR, KHÔNG lưu ảnh
   NOTE             VARCHAR2(2000)
   idx: (TRIP_ID, DEPARTURE_TIME)
 ```
@@ -340,6 +347,7 @@ ACCOMMODATIONS
   ADDRESS        VARCHAR2(500)
   CHECKIN_TIME   TIMESTAMP (UTC)
   CHECKOUT_TIME  TIMESTAMP (UTC)
+  QR_DATA        VARCHAR2(4000)  -- chuỗi giải mã từ QR booking (Mục 2.7); client tự render QR, KHÔNG lưu ảnh
   NOTE           VARCHAR2(2000)
   idx: (TRIP_ID, CHECKIN_TIME)
 ```

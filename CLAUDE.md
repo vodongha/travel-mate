@@ -18,8 +18,11 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
   M2: USERS/USER_DEVICES/AUTH_TOKENS (V2), BCrypt + JWT access, DB refresh tokens with rotation &
   reuse detection, Google ID-token verify, email-verify/password-reset, `/users/me`, FCM device
   registration, rate-limit/CORS/body-size hardening. Email sending is a dev `LoggingEmailSender`
-  stub (real provider = Open Decision #4, deferred). Runs against the Oracle ADB (schema
-  `TRAVEL_MATE`). **M3 (trips & members) is next.**
+  stub (real provider = Open Decision #4, deferred). M3: TRIPS/TRIP_MEMBERS/TRIP_INVITATIONS (V3),
+  trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 / 403), ghost members,
+  invitation link/QR token with atomic accept + in-place ghost→real merge. Runs against the Oracle
+  ADB (schema `TRAVEL_MATE`). **M4 (planning: places/events/transport/accommodation/checklist) is
+  next.**
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
