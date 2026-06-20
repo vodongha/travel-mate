@@ -123,7 +123,11 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
 6. **M6 — Fund & settlement ✅:** contributions/expenses, derived balance, settlement engine.
 7. **M7 — Dashboard & report ✅.**
 8. **M8 — Notifications ✅:** scheduled reminders + idempotent FCM dispatch job.
-9. **M9 — Flutter app.**
+9. **Settings support ✅:** public bilingual privacy page (`GET /privacy`), change-password
+   (`POST /auth/change-password`), profile `phone` + display currency on `GET/PATCH /users/me`,
+   self-service account deletion (`DELETE /users/me`), and an exchange-rate table
+   (`GET /rates`, `POST /rates/refresh`, 12h refresh) — the slice the Flutter app needs.
+10. **M9 — Flutter app.**
 
 ---
 

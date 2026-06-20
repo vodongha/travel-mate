@@ -41,6 +41,8 @@ public abstract class AbstractIntegrationTest {
         registry.add("app.ratelimit.capacity", () -> 1_000_000);
         // Tests drive the dispatcher directly; keep the background poller off for determinism.
         registry.add("app.notifications.scheduler-enabled", () -> "false");
+        // Keep the 12h exchange-rate refresh job out of the test context (no outbound network).
+        registry.add("app.rates.scheduler-enabled", () -> "false");
     }
 
     /** Wipe + re-migrate the schema once per test run so a reused compose DB stays deterministic. */
