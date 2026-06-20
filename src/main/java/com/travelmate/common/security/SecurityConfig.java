@@ -59,6 +59,9 @@ public class SecurityConfig {
     SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource)
             throws Exception {
         http
+                // Scope the stateless-JWT rules to the API; the web client is public static content
+                // served from the same origin (see webFilterChain).
+                .securityMatcher("/api/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -74,6 +77,21 @@ public class SecurityConfig {
                         .authenticationEntryPoint(problemHandlers.authenticationEntryPoint())
                         .accessDeniedHandler(problemHandlers.accessDeniedHandler()))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    /**
+     * Everything outside {@code /api/**} is the bundled Flutter web client (index.html + assets),
+     * served same-origin. It is public static content — no auth, no JWT filter. The SPA deep-link
+     * fallback lives in {@code SpaWebConfig}.
+     */
+    @Bean
+    @Order(3)
+    SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 

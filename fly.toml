@@ -1,0 +1,38 @@
+# fly.toml — TravelMate API (trippo.io.vn)
+# Serves the bundled Flutter web client at "/" and the API under "/api/v1" (same origin).
+# Docs: https://fly.io/docs/reference/configuration/
+
+app = "trippo"
+primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) and Vietnam
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SERVER_PORT = "8000"
+  # Oracle ADB wallet is materialised here from Fly secrets by scripts/fly_entrypoint.sh.
+  WALLET_DIR = "/app/wallet"
+  TNS_ADMIN = "/app/wallet"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 200
+    soft_limit = 150
+
+[[http_service.checks]]
+  grace_period = "40s"      # JVM + Flyway need a moment on cold start
+  interval = "30s"
+  method = "GET"
+  path = "/api/v1/ping"
+  timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"            # headroom for the JVM + Hibernate + Flyway

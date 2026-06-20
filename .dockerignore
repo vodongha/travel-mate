@@ -1,0 +1,15 @@
+.git
+.gitignore
+target
+.idea
+*.iml
+src/test
+docker-compose.yml
+*.md
+HELP.md
+.mvn/wrapper/maven-wrapper.jar
+wallet
+*.jks
+key.properties
+**/google-services.json
+*firebase-adminsdk*.json
