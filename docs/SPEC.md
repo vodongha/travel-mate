@@ -225,7 +225,14 @@ AUTH_TOKENS                          -- verify email & reset password & refresh
   idx: (USER_ID, TYPE), (TOKEN)
 ```
 
-**API:** `POST /auth/register`, `/auth/login`, `/auth/google`, `/auth/refresh`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password`; `GET/PATCH /users/me`; `POST /users/me/devices` (đăng ký FCM token).
+**API:** `POST /auth/register`, `/auth/login`, `/auth/google`, `/auth/refresh`, `/auth/verify-email`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/change-password`; `GET/PATCH/DELETE /users/me`; `POST /users/me/devices` (đăng ký FCM token).
+
+**Settings support (slice cho Flutter app):**
+- `POST /auth/change-password {currentPassword?, newPassword}` → 204. Tài khoản chỉ-Google (chưa có mật khẩu) được đặt mật khẩu đầu tiên (bỏ `currentPassword`); ngược lại bắt buộc và verify `currentPassword` (400 nếu sai). Đổi mật khẩu thu hồi mọi refresh token.
+- `GET /users/me` trả `name, email, phone, defaultCurrency, provider, hasPassword, emailVerified`. `PATCH /users/me` nhận `name, phone (E.164-ish, nullable), defaultCurrency` (validate theo tập tiền tệ hỗ trợ). Cột mới `USERS.PHONE VARCHAR2(32)` (migration V8).
+- `DELETE /users/me` → 204: soft-delete user (`IS_DELETED`) + thu hồi refresh token. `JwtAuthenticationFilter` kiểm tra user còn tồn tại (qua `@SQLRestriction`) nên access token còn hạn của tài khoản đã xóa bị từ chối (401).
+- `GET /privacy?lang=vi|en`: trang HTML chính sách quyền riêng tư **public, không auth**, song ngữ (mặc định `vi`), **framable** (không set `X-Frame-Options`) cho WebView trong app + store listing. Router-only (không DB), `EFFECTIVE_DATE` là hằng số.
+- `GET /rates` → `{baseCurrency, updatedAt, rates:[{currency, rateToBase}]}` cho tập tiền tệ app hỗ trợ (base VND: VND, USD, EUR, JPY, KRW, THB, SGD, CNY, AUD, GBP). `POST /rates/refresh` ép fetch lại. Cache trong bộ nhớ, refresh job `@Scheduled` mỗi 12h theo giờ đồng hồ (cron, không `fixedRate`); reuse `FrankfurterExchangeRateProvider`; `503 EXCHANGE_RATE_UNAVAILABLE` nếu nguồn không truy cập được. Yêu cầu auth.
 
 ---
 
