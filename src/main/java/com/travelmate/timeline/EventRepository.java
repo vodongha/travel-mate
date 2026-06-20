@@ -13,5 +13,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     /** Events whose start falls within [from, to], inclusive, ordered chronologically. */
     List<Event> findByTripIdAndStartTimeBetweenOrderByStartTimeAsc(Long tripId, Instant from, Instant to);
 
+    /** The next upcoming event (earliest start at or after {@code from}), for the dashboard. */
+    Optional<Event> findFirstByTripIdAndStartTimeGreaterThanEqualOrderByStartTimeAsc(Long tripId, Instant from);
+
     Optional<Event> findByRid(String rid);
 }
