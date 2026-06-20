@@ -3,8 +3,8 @@ package com.travelmate.expense;
 import com.travelmate.common.entity.Category;
 import com.travelmate.common.exception.ApiException;
 import com.travelmate.common.exception.ErrorCode;
-import com.travelmate.common.money.ExchangeRateProvider;
 import com.travelmate.common.money.MoneyService;
+import com.travelmate.common.money.RateResolver;
 import com.travelmate.expense.dto.CreateExpenseRequest;
 import com.travelmate.expense.dto.ExpenseResponse;
 import com.travelmate.expense.dto.ExpenseResponse.ShareView;
@@ -43,7 +43,7 @@ public class ExpenseService {
     private final PlaceService placeService;
     private final TripAccessGuard guard;
     private final MoneyService moneyService;
-    private final ExchangeRateProvider exchangeRateProvider;
+    private final RateResolver rateResolver;
     private final ExpenseSplitter splitter;
 
     public ExpenseService(ExpenseRepository expenseRepository,
@@ -53,7 +53,7 @@ public class ExpenseService {
                           PlaceService placeService,
                           TripAccessGuard guard,
                           MoneyService moneyService,
-                          ExchangeRateProvider exchangeRateProvider,
+                          RateResolver rateResolver,
                           ExpenseSplitter splitter) {
         this.expenseRepository = expenseRepository;
         this.shareRepository = shareRepository;
@@ -62,7 +62,7 @@ public class ExpenseService {
         this.placeService = placeService;
         this.guard = guard;
         this.moneyService = moneyService;
-        this.exchangeRateProvider = exchangeRateProvider;
+        this.rateResolver = rateResolver;
         this.splitter = splitter;
     }
 
@@ -101,7 +101,7 @@ public class ExpenseService {
         Long placeId = placeService.resolvePlaceId(request.placeRid(), trip.getId());
 
         String currency = request.currency().toUpperCase();
-        BigDecimal rate = resolveRate(currency, trip.getBaseCurrency(), request.exchangeRate());
+        BigDecimal rate = rateResolver.resolve(currency, trip.getBaseCurrency(), request.exchangeRate());
         BigDecimal amount = moneyService.normalizeAmount(request.amount());
         BigDecimal amountBase = moneyService.toAmountBase(amount, rate);
 
@@ -189,17 +189,6 @@ public class ExpenseService {
 
     private static BigDecimal valueOf(ExpenseShareInput input) {
         return input.value();
-    }
-
-    /** Same currency → exactly 1; else a manual override if given, otherwise the market rate. */
-    private BigDecimal resolveRate(String currency, String baseCurrency, BigDecimal override) {
-        if (currency.equalsIgnoreCase(baseCurrency)) {
-            return BigDecimal.ONE.setScale(MoneyService.RATE_SCALE);
-        }
-        if (override != null) {
-            return moneyService.normalizeRate(override);
-        }
-        return moneyService.normalizeRate(exchangeRateProvider.getRate(currency, baseCurrency));
     }
 
     private Long requireMemberId(String memberRid, Long tripId, String label) {
