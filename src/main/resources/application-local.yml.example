@@ -1,0 +1,18 @@
+# Template for the `local` profile. Copy to application-local.yml (gitignored) and
+# run with: SPRING_PROFILES_ACTIVE=local  (or --spring.profiles.active=local).
+# Values come from the environment (.env) — see .env.example. Connects to Oracle
+# ADB in thin mode via the wallet and switches CURRENT_SCHEMA to ORACLE_SCHEMA.
+spring:
+  datasource:
+    # Oracle thin + wallet: the DSN is a tnsnames.ora alias; TNS_ADMIN points at
+    # the unzipped wallet directory (auto-login cwallet.sso — no wallet password).
+    url: jdbc:oracle:thin:@${ORACLE_DSN}?TNS_ADMIN=${TNS_ADMIN}
+    username: ${ORACLE_USER}
+    password: ${ORACLE_PASSWORD}
+    hikari:
+      # Own a dedicated schema while connecting as ADMIN (mirrors family-budget).
+      connection-init-sql: ALTER SESSION SET CURRENT_SCHEMA = ${ORACLE_SCHEMA}
+  flyway:
+    schemas: ${ORACLE_SCHEMA}
+    default-schema: ${ORACLE_SCHEMA}
+    create-schemas: false   # the schema/user is created once by scripts/create_schema.sql
