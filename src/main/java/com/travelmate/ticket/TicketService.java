@@ -76,6 +76,7 @@ public class TicketService {
             ticket.setTicketType(request.ticketType());
         }
         ticket.setQrData(request.qrData());
+        ticket.setSeat(request.seat());
         ticket.setNote(request.note());
         ticket = ticketRepository.save(ticket);
         return toResponse(ticket, memberMap(ctx.trip().getId()), ctx.membership().getId());
@@ -100,6 +101,9 @@ public class TicketService {
         }
         if (request.qrData() != null && !request.qrData().isBlank()) {
             ticket.setQrData(request.qrData());
+        }
+        if (request.seat() != null) {
+            ticket.setSeat(request.seat().isBlank() ? null : request.seat());
         }
         if (request.note() != null) {
             ticket.setNote(request.note().isBlank() ? null : request.note());

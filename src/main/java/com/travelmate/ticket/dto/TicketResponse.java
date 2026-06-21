@@ -11,10 +11,11 @@ public record TicketResponse(
         String title,
         TicketType ticketType,
         String qrData,
+        String seat,
         String note) {
 
     public static TicketResponse from(Ticket t, String memberRid, String memberName, boolean mine) {
         return new TicketResponse(t.getRid(), memberRid, memberName, mine,
-                t.getTitle(), t.getTicketType(), t.getQrData(), t.getNote());
+                t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(), t.getNote());
     }
 }
