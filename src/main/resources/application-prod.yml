@@ -11,3 +11,7 @@ spring:
     schemas: ${ORACLE_SCHEMA:TRAVEL_MATE}
     default-schema: ${ORACLE_SCHEMA:TRAVEL_MATE}
     create-schemas: false
+
+# Public base URL for invite/email links (the deployed web app). Env-overridable.
+app:
+  public-url: ${APP_PUBLIC_URL:https://trippo.io.vn}
