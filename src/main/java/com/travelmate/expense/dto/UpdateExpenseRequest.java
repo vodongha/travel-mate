@@ -16,6 +16,7 @@ public record UpdateExpenseRequest(
         Category category,
         ExpenseType expenseType,
         @Size(max = 36) String placeRid,
+        @Size(max = 36) String eventRid,
         @Size(max = 2000) String note,
         Instant spentAt) {
 }
