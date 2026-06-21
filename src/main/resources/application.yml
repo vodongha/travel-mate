@@ -37,11 +37,20 @@ app:
     access-ttl: PT60M
     issuer: travel-mate
   google:
-    client-id: ${GOOGLE_CLIENT_ID:}
+    # The project's **Web** OAuth client id — must equal the app's serverClientId so the Google ID
+    # token's `aud` matches. Public value (safe as a default); override with env GOOGLE_CLIENT_ID.
+    client-id: ${GOOGLE_CLIENT_ID:542406829306-4f37t1brg750jdoksjidh197hkbopnuj.apps.googleusercontent.com}
   cors:
     # Comma-separated origin whitelist (no '*' with credentials). Empty = no browser origins
     # allowed (native mobile clients don't send Origin and are unaffected).
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  fcm:
+    # When true, the Firebase Admin SDK sends real pushes (needs a service account). When false
+    # (dev/test default), the LoggingFcmSender just logs — the pipeline still runs.
+    enabled: ${FCM_ENABLED:false}
+    # The service-account JSON content (inline). On Fly set FCM_CREDENTIALS to the file's contents.
+    # Empty falls back to Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS).
+    credentials: ${FCM_CREDENTIALS:}
   auth:
     refresh-ttl-days: 30
     email-verify-ttl-hours: 24
