@@ -32,6 +32,7 @@ public record CreateExpenseRequest(
         @DecimalMin(value = "0.0", inclusive = false) @Digits(integer = 11, fraction = 8) BigDecimal exchangeRate,
         @NotBlank @Size(max = 36) String payerRid,
         @Size(max = 36) String placeRid,
+        @Size(max = 36) String eventRid,
         boolean paidFromFund,
         @Size(max = 2000) String note,
         Instant spentAt,
