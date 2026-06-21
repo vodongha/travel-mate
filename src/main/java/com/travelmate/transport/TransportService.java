@@ -44,6 +44,7 @@ public class TransportService {
         t.setTransportType(request.transportType());
         t.setProvider(request.provider());
         t.setBookingCode(request.bookingCode());
+        t.setSeat(request.seat());
         t.setDeparturePlace(request.departurePlace());
         t.setArrivalPlace(request.arrivalPlace());
         t.setDepartureTime(request.departureTime());
@@ -72,6 +73,9 @@ public class TransportService {
         }
         if (request.bookingCode() != null) {
             t.setBookingCode(blankToNull(request.bookingCode()));
+        }
+        if (request.seat() != null) {
+            t.setSeat(blankToNull(request.seat()));
         }
         if (request.departurePlace() != null) {
             t.setDeparturePlace(blankToNull(request.departurePlace()));
