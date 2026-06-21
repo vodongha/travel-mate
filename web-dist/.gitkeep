@@ -1,0 +1,2 @@
+Placeholder so the Docker COPY of web-dist/ always succeeds.
+CI overwrites this directory with the built Flutter web client before deploy.

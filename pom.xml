@@ -22,6 +22,7 @@
         <uuid-generator.version>5.1.0</uuid-generator.version>
         <jjwt.version>0.12.6</jjwt.version>
         <google-api-client.version>2.7.0</google-api-client.version>
+        <firebase-admin.version>9.4.1</firebase-admin.version>
     </properties>
 
     <dependencies>
@@ -123,12 +124,19 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-        <!-- Apache HttpClient 5 on the test classpath makes TestRestTemplate support PATCH
-             (the JDK's default request factory does not), used by the planning/expense IT tests. -->
+        <!-- Apache HttpClient 5 (classic + async). Used at runtime by the Firebase Admin SDK
+             (its ApacheHttp2Transport) and on the test classpath so TestRestTemplate supports PATCH
+             (the JDK's default request factory does not). -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <scope>test</scope>
+        </dependency>
+        <!-- Firebase Admin SDK — sends FCM pushes when a service account is configured
+             (app.fcm.enabled=true); otherwise the dev LoggingFcmSender is used. -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>${firebase-admin.version}</version>
         </dependency>
     </dependencies>
 
