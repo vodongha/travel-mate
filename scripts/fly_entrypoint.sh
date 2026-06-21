@@ -25,4 +25,11 @@ if [ -n "$WALLET_CWALLET_SSO_B64" ]; then
   chmod 600 "$WALLET_DIR/cwallet.sso"
 fi
 
+# FCM service account: provide as base64 (FCM_CREDENTIALS_B64) and we expose it inline as
+# FCM_CREDENTIALS (app.fcm.credentials). Set FCM_ENABLED=true to actually send pushes.
+if [ -n "$FCM_CREDENTIALS_B64" ]; then
+  FCM_CREDENTIALS="$(printf '%s' "$FCM_CREDENTIALS_B64" | base64 -d)"
+  export FCM_CREDENTIALS
+fi
+
 exec "$@"
