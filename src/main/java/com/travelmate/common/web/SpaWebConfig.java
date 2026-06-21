@@ -35,6 +35,16 @@ public class SpaWebConfig implements WebMvcConfigurer {
                         if (resourcePath.startsWith("api/")) {
                             return null;
                         }
+                        // A missing *asset* (a path whose last segment has a file extension, e.g.
+                        // foo.js, bar.json, x.png) must 404 — never return index.html for it, or the
+                        // browser rejects the "script" with an unsupported MIME type ('text/html').
+                        // Only extension-less client routes (e.g. /trips/abc/timeline) fall back.
+                        final int lastSlash = resourcePath.lastIndexOf('/');
+                        final String lastSegment =
+                                lastSlash >= 0 ? resourcePath.substring(lastSlash + 1) : resourcePath;
+                        if (lastSegment.contains(".")) {
+                            return null;
+                        }
                         final Resource index = new ClassPathResource("/static/index.html");
                         return index.exists() ? index : null;
                     }
