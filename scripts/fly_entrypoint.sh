@@ -15,12 +15,19 @@ set -e
 
 WALLET_DIR="${WALLET_DIR:-/app/wallet}"
 
-if [ -n "$WALLET_CWALLET_SSO_B64" ]; then
+# Preferred: the whole OCI wallet as a base64 tar.gz (so ojdbc.properties + cwallet.sso + the JKS
+# files are all present — ojdbc needs ojdbc.properties to locate the wallet).
+if [ -n "$WALLET_TAR_B64" ]; then
+  mkdir -p "$WALLET_DIR"
+  printf '%s' "$WALLET_TAR_B64" | base64 -d | tar xzf - -C "$WALLET_DIR"
+  sed -i "s#(DIRECTORY=[^)]*)#(DIRECTORY=\"$WALLET_DIR\")#" "$WALLET_DIR/sqlnet.ora" 2>/dev/null || true
+  chmod 600 "$WALLET_DIR"/* 2>/dev/null || true
+elif [ -n "$WALLET_CWALLET_SSO_B64" ]; then
+  # Fallback: individual files (no JKS / ojdbc.properties).
   mkdir -p "$WALLET_DIR"
   printf '%s' "$WALLET_CWALLET_SSO_B64" | base64 -d > "$WALLET_DIR/cwallet.sso"
   printf '%s' "$WALLET_TNSNAMES_B64"    | base64 -d > "$WALLET_DIR/tnsnames.ora"
   printf '%s' "$WALLET_SQLNET_B64"      | base64 -d > "$WALLET_DIR/sqlnet.ora"
-  # Force the wallet location to our dir, whatever the downloaded sqlnet.ora pointed at.
   sed -i "s#(DIRECTORY=[^)]*)#(DIRECTORY=\"$WALLET_DIR\")#" "$WALLET_DIR/sqlnet.ora" 2>/dev/null || true
   chmod 600 "$WALLET_DIR/cwallet.sso"
 fi

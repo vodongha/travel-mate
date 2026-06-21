@@ -60,3 +60,7 @@ ojdbc.properties
 *.db
 .DS_Store
 *.log
+
+# CI/local-built web client (only the placeholder is tracked)
+/web-dist/*
+!/web-dist/.gitkeep
