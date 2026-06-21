@@ -2,9 +2,12 @@ name: Deploy
 
 # On a release to master: run the full test suite, then build the Flutter web client (from the
 # private travel-mate-app repo) into ./web-dist and deploy the single-origin image to Fly.io.
+# Also triggerable manually / from the app repo (workflow_dispatch) so an app-only release can
+# redeploy the web without a backend change — see travel-mate-app .github/workflows/deploy-web.yml.
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 jobs:
   verify:
