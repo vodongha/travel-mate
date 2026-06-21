@@ -13,6 +13,8 @@ import com.travelmate.expense.dto.UpdateExpenseRequest;
 import com.travelmate.place.Place;
 import com.travelmate.place.PlaceRepository;
 import com.travelmate.place.PlaceService;
+import com.travelmate.timeline.Event;
+import com.travelmate.timeline.EventRepository;
 import com.travelmate.trip.MemberRole;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripAccessGuard;
@@ -41,6 +43,7 @@ public class ExpenseService {
     private final TripMemberRepository tripMemberRepository;
     private final PlaceRepository placeRepository;
     private final PlaceService placeService;
+    private final EventRepository eventRepository;
     private final TripAccessGuard guard;
     private final MoneyService moneyService;
     private final RateResolver rateResolver;
@@ -51,6 +54,7 @@ public class ExpenseService {
                           TripMemberRepository tripMemberRepository,
                           PlaceRepository placeRepository,
                           PlaceService placeService,
+                          EventRepository eventRepository,
                           TripAccessGuard guard,
                           MoneyService moneyService,
                           RateResolver rateResolver,
@@ -60,6 +64,7 @@ public class ExpenseService {
         this.tripMemberRepository = tripMemberRepository;
         this.placeRepository = placeRepository;
         this.placeService = placeService;
+        this.eventRepository = eventRepository;
         this.guard = guard;
         this.moneyService = moneyService;
         this.rateResolver = rateResolver;
@@ -75,12 +80,13 @@ public class ExpenseService {
         }
         Map<Long, String> memberRids = memberRidMap(trip.getId());
         Map<Long, String> placeRids = placeRidMap(trip.getId());
+        Map<Long, String> eventRids = eventRidMap(trip.getId());
         Map<Long, List<ExpenseShare>> sharesByExpense = shareRepository
                 .findByExpenseIdIn(expenses.stream().map(Expense::getId).toList())
                 .stream().collect(Collectors.groupingBy(ExpenseShare::getExpenseId));
 
         return expenses.stream()
-                .map(e -> toResponse(e, memberRids, placeRids,
+                .map(e -> toResponse(e, memberRids, placeRids, eventRids,
                         sharesByExpense.getOrDefault(e.getId(), List.of())))
                 .toList();
     }
@@ -90,7 +96,7 @@ public class ExpenseService {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER).trip();
         Expense e = loadInTrip(expenseRid, trip.getId());
         return toResponse(e, memberRidMap(trip.getId()), placeRidMap(trip.getId()),
-                shareRepository.findByExpenseId(e.getId()));
+                eventRidMap(trip.getId()), shareRepository.findByExpenseId(e.getId()));
     }
 
     @Transactional
@@ -118,6 +124,7 @@ public class ExpenseService {
         expense.setAmountBase(amountBase);
         expense.setPayerId(payerId);
         expense.setPlaceId(placeId);
+        expense.setEventId(resolveEventId(request.eventRid(), trip.getId()));
         expense.setPaidFromFund(request.paidFromFund());
         expense.setNote(request.note());
         expense.setSpentAt(request.spentAt() != null ? request.spentAt() : Instant.now());
@@ -148,6 +155,11 @@ public class ExpenseService {
                     ? null
                     : placeService.resolvePlaceId(request.placeRid(), trip.getId()));
         }
+        if (request.eventRid() != null) {
+            e.setEventId(request.eventRid().isBlank()
+                    ? null
+                    : resolveEventId(request.eventRid(), trip.getId()));
+        }
         if (request.note() != null) {
             e.setNote(request.note().isBlank() ? null : request.note());
         }
@@ -155,7 +167,7 @@ public class ExpenseService {
             e.setSpentAt(request.spentAt());
         }
         return toResponse(e, memberRidMap(trip.getId()), placeRidMap(trip.getId()),
-                shareRepository.findByExpenseId(e.getId()));
+                eventRidMap(trip.getId()), shareRepository.findByExpenseId(e.getId()));
     }
 
     @Transactional
@@ -218,8 +230,26 @@ public class ExpenseService {
                 .collect(Collectors.toMap(Place::getId, Place::getRid));
     }
 
+    private Map<Long, String> eventRidMap(Long tripId) {
+        return eventRepository.findByTripIdOrderByStartTimeAsc(tripId).stream()
+                .collect(Collectors.toMap(Event::getId, Event::getRid));
+    }
+
+    /** Resolve an event rid to its id, confirming it belongs to the trip; null for a blank rid. */
+    private Long resolveEventId(String eventRid, Long tripId) {
+        if (eventRid == null || eventRid.isBlank()) {
+            return null;
+        }
+        Event event = eventRepository.findByRid(eventRid)
+                .filter(ev -> tripId.equals(ev.getTripId()))
+                .orElseThrow(() -> new ApiException(ErrorCode.VALIDATION_FAILED,
+                        "Event is not part of this trip."));
+        return event.getId();
+    }
+
     private ExpenseResponse toResponse(Expense e, Map<Long, String> memberRids,
-                                       Map<Long, String> placeRids, List<ExpenseShare> shares) {
+                                       Map<Long, String> placeRids, Map<Long, String> eventRids,
+                                       List<ExpenseShare> shares) {
         List<ShareView> shareViews = shares.stream()
                 .map(s -> new ShareView(memberRids.get(s.getMemberId()), s.getShareBase()))
                 .filter(v -> Objects.nonNull(v.memberRid()))
@@ -227,6 +257,7 @@ public class ExpenseService {
         return ExpenseResponse.from(e,
                 memberRids.get(e.getPayerId()),
                 e.getPlaceId() == null ? null : placeRids.get(e.getPlaceId()),
+                e.getEventId() == null ? null : eventRids.get(e.getEventId()),
                 shareViews);
     }
 }
