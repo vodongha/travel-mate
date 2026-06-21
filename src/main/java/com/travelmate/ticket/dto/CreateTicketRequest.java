@@ -10,5 +10,6 @@ public record CreateTicketRequest(
         @NotBlank @Size(max = 200) String title,
         TicketType ticketType,
         @NotBlank @Size(max = 4000) String qrData,
+        @Size(max = 50) String seat,
         @Size(max = 2000) String note) {
 }
