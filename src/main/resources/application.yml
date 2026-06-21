@@ -30,6 +30,9 @@ server:
   port: ${SERVER_PORT:8000}
 
 app:
+  # Public base URL of the deployed app — used to build invite/email links. Override per
+  # environment (prod sets https://trippo.io.vn); defaults to the local dev server.
+  public-url: ${APP_PUBLIC_URL:http://localhost:8000}
   jwt:
     # Override in every real environment via JWT_SECRET. The fallback is a clearly-insecure
     # dev/test placeholder (>= 32 bytes for HS256), never a real secret.
