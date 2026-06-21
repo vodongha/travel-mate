@@ -12,6 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.CrossOriginOpenerPolicyHeaderWriter.CrossOriginOpenerPolicy;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -91,6 +92,11 @@ public class SecurityConfig {
         http
                 .securityMatcher("/**")
                 .csrf(AbstractHttpConfigurer::disable)
+                // Google Sign-In (GIS) opens a popup and posts the ID token back to this page via
+                // window.postMessage. Without an opener-friendly COOP the browser blocks that call
+                // ("Cross-Origin-Opener-Policy policy would block the window.postMessage call").
+                .headers(h -> h.crossOriginOpenerPolicy(
+                        coop -> coop.policy(CrossOriginOpenerPolicy.SAME_ORIGIN_ALLOW_POPUPS)))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
