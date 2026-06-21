@@ -126,6 +126,7 @@ public class InvitationService {
 
     private String inviteUrl(String token) {
         // A plain string the client encodes into a QR code (SPEC §2.7 — no QR image stored).
-        return publicUrl + "/invite?token=" + token;
+        // Path must match the Flutter app route (AcceptInviteScreen at /join?token=...).
+        return publicUrl + "/join?token=" + token;
     }
 }
