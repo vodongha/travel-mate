@@ -12,6 +12,8 @@ primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) a
   SERVER_PORT = "8000"
   SPRING_PROFILES_ACTIVE = "prod"   # use the TRAVEL_MATE schema, not ADMIN
   ORACLE_SCHEMA = "TRAVEL_MATE"
+  # Size the JVM heap to the 512MB machine (leave headroom for metaspace + Oracle/Firebase native).
+  JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=65.0"
   # Oracle ADB wallet is materialised here from Fly secrets by scripts/fly_entrypoint.sh.
   WALLET_DIR = "/app/wallet"
   TNS_ADMIN = "/app/wallet"
@@ -37,4 +39,4 @@ primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) a
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "1gb"            # headroom for the JVM + Hibernate + Flyway
+  memory = "512mb"          # JVM heap capped to ~65% via JAVA_TOOL_OPTIONS
