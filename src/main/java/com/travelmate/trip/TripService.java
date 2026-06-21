@@ -138,8 +138,9 @@ public class TripService {
     @Transactional(readOnly = true)
     public List<MemberResponse> listMembers(Long userId, String tripRid) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
+        Long me = ctx.membership().getId();
         return tripMemberRepository.findByTripId(ctx.trip().getId()).stream()
-                .map(MemberResponse::from)
+                .map(m -> MemberResponse.from(m, m.getId().equals(me)))
                 .toList();
     }
 
