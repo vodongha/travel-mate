@@ -9,5 +9,6 @@ public record UpdateTicketRequest(
         @Size(max = 200) String title,
         TicketType ticketType,
         @Size(max = 4000) String qrData,
+        @Size(max = 50) String seat,
         @Size(max = 2000) String note) {
 }

@@ -34,6 +34,9 @@ public class Ticket extends BaseEntity {
     @Column(name = "QR_DATA", nullable = false, length = 4000)
     private String qrData;
 
+    @Column(name = "SEAT", length = 50)
+    private String seat;
+
     @Column(name = "NOTE", length = 2000)
     private String note;
 
@@ -75,6 +78,14 @@ public class Ticket extends BaseEntity {
 
     public void setQrData(String qrData) {
         this.qrData = qrData;
+    }
+
+    public String getSeat() {
+        return seat;
+    }
+
+    public void setSeat(String seat) {
+        this.seat = seat;
     }
 
     public String getNote() {
