@@ -10,6 +10,7 @@ public record CreateTransportRequest(
         @NotNull TransportType transportType,
         @Size(max = 150) String provider,
         @Size(max = 100) String bookingCode,
+        @Size(max = 50) String seat,
         @Size(max = 300) String departurePlace,
         @Size(max = 300) String arrivalPlace,
         Instant departureTime,
