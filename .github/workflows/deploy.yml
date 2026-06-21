@@ -58,12 +58,12 @@ jobs:
         with:
           channel: stable
 
-      - name: Build Flutter web (same-origin → trippo.io.vn)
+      - name: Build Flutter web (served same-origin by the backend)
         working-directory: app-src
         run: |
           flutter pub get
           flutter build web --release --no-tree-shake-icons \
-            --dart-define=API_BASE_URL=https://trippo.io.vn
+            --dart-define=SAME_ORIGIN=true
 
       - name: Stage web client into the image context
         run: |
