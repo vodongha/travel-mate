@@ -56,9 +56,12 @@ class NotificationIT extends AbstractIntegrationTest {
                 "title", "Museum", "eventType", "SIGHTSEEING", "startTime", "2099-06-02T03:00:00Z"), token);
         assertThat(pending(tripId)).hasSize(5);
 
-        // dispatch everything due up to the far future → all delivered, none left pending
+        // dispatch everything due up to the far future → all delivered, none left pending.
+        // dispatchDue is global (not trip-scoped) and the IT context/DB is shared across test
+        // classes, so other trips' notifications may also be delivered — assert at-least our 5 here
+        // and verify our trip exactly via the trip-scoped checks below.
         int delivered = dispatcher.dispatchDue(FAR_FUTURE);
-        assertThat(delivered).isEqualTo(5);
+        assertThat(delivered).isGreaterThanOrEqualTo(5);
         assertThat(pending(tripId)).isEmpty();
         assertThat(byStatus(tripId, NotificationStatus.SENT)).hasSize(5);
 
