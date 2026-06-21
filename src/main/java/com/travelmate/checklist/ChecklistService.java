@@ -68,8 +68,17 @@ public class ChecklistService {
     @Transactional
     public ChecklistItemResponse update(Long userId, String tripRid, String itemRid,
                                         UpdateChecklistItemRequest request) {
-        Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.EDITOR).trip();
+        // Any member may tick/untick an item (collaborative — each person checks their packing
+        // off); only structural edits (rename, reassign, reorder) need the EDITOR role.
+        var ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
+        Trip trip = ctx.trip();
         ChecklistItem item = loadInTrip(itemRid, trip.getId());
+        boolean structural = request.title() != null
+                || request.assigneeRid() != null || request.sortOrder() != null;
+        if (structural && !ctx.membership().getRole().satisfies(MemberRole.EDITOR)) {
+            throw new ApiException(ErrorCode.FORBIDDEN,
+                    "Editing a checklist item requires the EDITOR role.");
+        }
         if (request.title() != null) {
             item.setTitle(request.title().trim());
         }
