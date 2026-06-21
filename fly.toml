@@ -2,7 +2,7 @@
 # Serves the bundled Flutter web client at "/" and the API under "/api/v1" (same origin).
 # Docs: https://fly.io/docs/reference/configuration/
 
-app = "trippo"
+app = "trippo-api"      # internal Fly app name (public domain is trippo.io.vn)
 primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) and Vietnam
 
 [build]
@@ -10,6 +10,8 @@ primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) a
 
 [env]
   SERVER_PORT = "8000"
+  SPRING_PROFILES_ACTIVE = "prod"   # use the TRAVEL_MATE schema, not ADMIN
+  ORACLE_SCHEMA = "TRAVEL_MATE"
   # Oracle ADB wallet is materialised here from Fly secrets by scripts/fly_entrypoint.sh.
   WALLET_DIR = "/app/wallet"
   TNS_ADMIN = "/app/wallet"

@@ -1,0 +1,13 @@
+# Production profile (Fly.io). The datasource URL/credentials come from env (DB_URL/DB_USERNAME/
+# DB_PASSWORD in the base application.yml); this profile only pins the dedicated Oracle schema so
+# TravelMate's tables live in their own schema (TRAVEL_MATE) — never the shared ADMIN schema.
+# Activate with SPRING_PROFILES_ACTIVE=prod. The schema/user is created once out-of-band
+# (scripts/create_schema.sql); Flyway owns the objects inside it.
+spring:
+  datasource:
+    hikari:
+      connection-init-sql: ALTER SESSION SET CURRENT_SCHEMA = ${ORACLE_SCHEMA:TRAVEL_MATE}
+  flyway:
+    schemas: ${ORACLE_SCHEMA:TRAVEL_MATE}
+    default-schema: ${ORACLE_SCHEMA:TRAVEL_MATE}
+    create-schemas: false
