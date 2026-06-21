@@ -32,6 +32,9 @@ public class Transport extends BaseEntity {
     @Column(name = "BOOKING_CODE", length = 100)
     private String bookingCode;
 
+    @Column(name = "SEAT", length = 50)
+    private String seat;
+
     @Column(name = "DEPARTURE_PLACE", length = 300)
     private String departurePlace;
 
@@ -80,6 +83,14 @@ public class Transport extends BaseEntity {
 
     public void setBookingCode(String bookingCode) {
         this.bookingCode = bookingCode;
+    }
+
+    public String getSeat() {
+        return seat;
+    }
+
+    public void setSeat(String seat) {
+        this.seat = seat;
     }
 
     public String getDeparturePlace() {
