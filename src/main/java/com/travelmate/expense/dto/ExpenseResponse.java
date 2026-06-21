@@ -20,6 +20,7 @@ public record ExpenseResponse(
         BigDecimal amountBase,
         String payerRid,
         String placeRid,
+        String eventRid,
         boolean paidFromFund,
         String note,
         Instant spentAt,
@@ -28,7 +29,8 @@ public record ExpenseResponse(
     public record ShareView(String memberRid, BigDecimal shareBase) {
     }
 
-    public static ExpenseResponse from(Expense e, String payerRid, String placeRid, List<ShareView> shares) {
+    public static ExpenseResponse from(Expense e, String payerRid, String placeRid, String eventRid,
+                                       List<ShareView> shares) {
         return new ExpenseResponse(
                 e.getRid(),
                 e.getTitle(),
@@ -40,6 +42,7 @@ public record ExpenseResponse(
                 e.getAmountBase(),
                 payerRid,
                 placeRid,
+                eventRid,
                 e.isPaidFromFund(),
                 e.getNote(),
                 e.getSpentAt(),

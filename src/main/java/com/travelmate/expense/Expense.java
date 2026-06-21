@@ -55,6 +55,9 @@ public class Expense extends BaseEntity {
     @Column(name = "PLACE_ID")
     private Long placeId;
 
+    @Column(name = "EVENT_ID")
+    private Long eventId;
+
     @Column(name = "PAID_FROM_FUND", nullable = false)
     private boolean paidFromFund = false;
 
@@ -142,6 +145,14 @@ public class Expense extends BaseEntity {
 
     public void setPlaceId(Long placeId) {
         this.placeId = placeId;
+    }
+
+    public Long getEventId() {
+        return eventId;
+    }
+
+    public void setEventId(Long eventId) {
+        this.eventId = eventId;
     }
 
     public boolean isPaidFromFund() {
