@@ -35,9 +35,6 @@ public class Accommodation extends BaseEntity {
     @Column(name = "CHECKOUT_TIME")
     private Instant checkoutTime;
 
-    @Column(name = "QR_DATA", length = 4000)
-    private String qrData;
-
     @Column(name = "NOTE", length = 2000)
     private String note;
 
@@ -87,14 +84,6 @@ public class Accommodation extends BaseEntity {
 
     public void setCheckoutTime(Instant checkoutTime) {
         this.checkoutTime = checkoutTime;
-    }
-
-    public String getQrData() {
-        return qrData;
-    }
-
-    public void setQrData(String qrData) {
-        this.qrData = qrData;
     }
 
     public String getNote() {

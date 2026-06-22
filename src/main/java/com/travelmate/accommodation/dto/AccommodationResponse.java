@@ -11,7 +11,6 @@ public record AccommodationResponse(
         String address,
         Instant checkinTime,
         Instant checkoutTime,
-        String qrData,
         String note) {
 
     public static AccommodationResponse from(Accommodation a) {
@@ -22,7 +21,6 @@ public record AccommodationResponse(
                 a.getAddress(),
                 a.getCheckinTime(),
                 a.getCheckoutTime(),
-                a.getQrData(),
                 a.getNote());
     }
 }

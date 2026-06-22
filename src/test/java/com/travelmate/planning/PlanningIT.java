@@ -100,26 +100,36 @@ class PlanningIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void transportAndAccommodation_qrDataRoundTrips() {
+    void ticketLinksToTransportLeg() {
+        // The per-person boarding pass (seat + QR) is a ticket attached to the flight leg, not a
+        // field on the leg itself — so each passenger gets their own ticket on the same transport.
         String owner = registerToken("plan-owner2@example.com");
         String tripRid = createTrip(owner, "Osaka 2026");
-        String ticketQr = "TKT|VN123|SEAT12A|2026-09-09T22:30:00Z";
 
-        JsonNode transport = post("/api/v1/trips/" + tripRid + "/transports",
+        String transportRid = post("/api/v1/trips/" + tripRid + "/transports",
                 Map.of("transportType", "FLIGHT", "provider", "VietnamAirlines",
-                        "departureTime", "2026-09-09T22:30:00Z", "arrivalTime", "2026-09-10T05:00:00Z",
-                        "qrData", ticketQr), owner).getBody().get("data");
-        assertThat(transport.get("qrData").asText()).isEqualTo(ticketQr);
-        // re-fetch keeps the QR string intact (stored as a string, not an image — SPEC §2.7)
-        String transportRid = transport.get("rid").asText();
-        assertThat(get("/api/v1/trips/" + tripRid + "/transports/" + transportRid, owner)
-                .getBody().get("data").get("qrData").asText()).isEqualTo(ticketQr);
+                        "departureTime", "2026-09-09T22:30:00Z", "arrivalTime", "2026-09-10T05:00:00Z"),
+                owner).getBody().get("data").get("rid").asText();
 
+        JsonNode ticket = post("/api/v1/trips/" + tripRid + "/tickets",
+                Map.of("title", "Boarding pass", "ticketType", "TRANSPORT",
+                        "qrData", "TKT|VN123|2026-09-09T22:30:00Z", "seat", "12A",
+                        "itineraryKind", "TRANSPORT", "itineraryRid", transportRid),
+                owner).getBody().get("data");
+        assertThat(ticket.get("seat").asText()).isEqualTo("12A");
+        assertThat(ticket.get("itineraryKind").asText()).isEqualTo("TRANSPORT");
+        assertThat(ticket.get("itineraryRid").asText()).isEqualTo(transportRid);
+
+        // the link round-trips through the list endpoint
+        JsonNode mine = get("/api/v1/trips/" + tripRid + "/tickets/mine", owner).getBody().get("data");
+        assertThat(mine.get(0).get("itineraryRid").asText()).isEqualTo(transportRid);
+
+        // a hotel stay has no own QR field anymore
         JsonNode hotel = post("/api/v1/trips/" + tripRid + "/accommodations",
                 Map.of("name", "Hotel Namba", "bookingCode", "BK-9981",
-                        "checkinTime", "2026-09-10T06:00:00Z", "checkoutTime", "2026-09-12T03:00:00Z",
-                        "qrData", "HOTEL|BK-9981"), owner).getBody().get("data");
-        assertThat(hotel.get("qrData").asText()).isEqualTo("HOTEL|BK-9981");
+                        "checkinTime", "2026-09-10T06:00:00Z", "checkoutTime", "2026-09-12T03:00:00Z"),
+                owner).getBody().get("data");
+        assertThat(hotel.has("qrData")).isFalse();
         assertThat(hotel.has("id")).isFalse();
     }
 

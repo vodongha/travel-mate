@@ -11,6 +11,5 @@ public record UpdateAccommodationRequest(
         @Size(max = 500) String address,
         Instant checkinTime,
         Instant checkoutTime,
-        @Size(max = 4000) String qrData,
         @Size(max = 2000) String note) {
 }

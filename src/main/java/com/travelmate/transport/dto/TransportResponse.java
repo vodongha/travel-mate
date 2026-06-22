@@ -10,12 +10,10 @@ public record TransportResponse(
         TransportType transportType,
         String provider,
         String bookingCode,
-        String seat,
         String departurePlace,
         String arrivalPlace,
         Instant departureTime,
         Instant arrivalTime,
-        String qrData,
         String note) {
 
     public static TransportResponse from(Transport t) {
@@ -24,12 +22,10 @@ public record TransportResponse(
                 t.getTransportType(),
                 t.getProvider(),
                 t.getBookingCode(),
-                t.getSeat(),
                 t.getDeparturePlace(),
                 t.getArrivalPlace(),
                 t.getDepartureTime(),
                 t.getArrivalTime(),
-                t.getQrData(),
                 t.getNote());
     }
 }
