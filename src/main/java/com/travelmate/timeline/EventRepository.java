@@ -17,4 +17,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Optional<Event> findFirstByTripIdAndStartTimeGreaterThanEqualOrderByStartTimeAsc(Long tripId, Instant from);
 
     Optional<Event> findByRid(String rid);
+
+    /** Live events linked to a place — used to clear the link when the place is deleted. */
+    List<Event> findByPlaceId(Long placeId);
+
+    /** Whether any OTHER live event still references this place (to decide if it's now orphaned). */
+    boolean existsByPlaceIdAndIdNot(Long placeId, Long id);
 }

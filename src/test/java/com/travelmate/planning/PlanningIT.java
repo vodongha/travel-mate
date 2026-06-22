@@ -62,6 +62,44 @@ class PlanningIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void place_prunedWhenLastEventReleasesIt_andDeletePlaceUnlinksEvents() {
+        String owner = registerToken("plan-owner5@example.com");
+        String tripRid = createTrip(owner, "Hanoi 2026");
+
+        // A place linked to a single event is removed from the Places tab once that event is deleted.
+        String solo = post("/api/v1/trips/" + tripRid + "/places",
+                Map.of("name", "Old Quarter"), owner).getBody().get("data").get("rid").asText();
+        String e0 = post("/api/v1/trips/" + tripRid + "/events", Map.of("title", "Walk",
+                "startTime", "2026-05-01T01:00:00Z", "placeRid", solo), owner)
+                .getBody().get("data").get("rid").asText();
+        delete("/api/v1/trips/" + tripRid + "/events/" + e0, owner);
+        assertThat(get("/api/v1/trips/" + tripRid + "/places", owner).getBody().get("data").size())
+                .isZero();
+
+        // A place shared by two events is kept while either still uses it.
+        String shared = post("/api/v1/trips/" + tripRid + "/places",
+                Map.of("name", "Station"), owner).getBody().get("data").get("rid").asText();
+        String e1 = post("/api/v1/trips/" + tripRid + "/events", Map.of("title", "Arrive",
+                "startTime", "2026-05-02T01:00:00Z", "placeRid", shared), owner)
+                .getBody().get("data").get("rid").asText();
+        post("/api/v1/trips/" + tripRid + "/events", Map.of("title", "Depart",
+                "startTime", "2026-05-05T01:00:00Z", "placeRid", shared), owner);
+        delete("/api/v1/trips/" + tripRid + "/events/" + e1, owner);
+        assertThat(get("/api/v1/trips/" + tripRid + "/places", owner).getBody().get("data").size())
+                .isEqualTo(1); // the other event still uses it
+
+        // Deleting the place itself keeps the remaining event but strips its location.
+        assertThat(delete("/api/v1/trips/" + tripRid + "/places/" + shared, owner).getStatusCode())
+                .isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(get("/api/v1/trips/" + tripRid + "/places", owner).getBody().get("data").size())
+                .isZero();
+        JsonNode events = get("/api/v1/trips/" + tripRid + "/events", owner).getBody().get("data");
+        assertThat(events.size()).isEqualTo(1); // event survived
+        assertThat(events.get(0).path("placeRid").isNull()
+                || events.get(0).path("placeRid").isMissingNode()).isTrue();
+    }
+
+    @Test
     void transportAndAccommodation_qrDataRoundTrips() {
         String owner = registerToken("plan-owner2@example.com");
         String tripRid = createTrip(owner, "Osaka 2026");
