@@ -337,8 +337,8 @@ TRANSPORTS
   ARRIVAL_PLACE    VARCHAR2(300)
   DEPARTURE_TIME   TIMESTAMP (UTC)
   ARRIVAL_TIME     TIMESTAMP (UTC)
-  QR_DATA          VARCHAR2(4000)  -- chuỗi giải mã từ QR vé (Mục 2.7); client tự render QR, KHÔNG lưu ảnh
   NOTE             VARCHAR2(2000)
+  -- Ghế & QR vé từng người KHÔNG ở đây — chúng nằm trên TICKETS gắn vào chặng này (V17).
   idx: (TRIP_ID, DEPARTURE_TIME)
 ```
 
@@ -354,8 +354,8 @@ ACCOMMODATIONS
   ADDRESS        VARCHAR2(500)
   CHECKIN_TIME   TIMESTAMP (UTC)
   CHECKOUT_TIME  TIMESTAMP (UTC)
-  QR_DATA        VARCHAR2(4000)  -- chuỗi giải mã từ QR booking (Mục 2.7); client tự render QR, KHÔNG lưu ảnh
   NOTE           VARCHAR2(2000)
+  -- Voucher/QR booking nằm trên TICKETS (vé nhóm) gắn vào lưu trú này, không ở đây (V17).
   idx: (TRIP_ID, CHECKIN_TIME)
 ```
 

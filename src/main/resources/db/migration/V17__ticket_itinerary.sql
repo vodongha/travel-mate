@@ -1,4 +1,4 @@
--- V16 — Tickets attach to an itinerary item (polymorphic, like expenses): a flight leg has one
+-- V17 — Tickets attach to an itinerary item (polymorphic, like expenses): a flight leg has one
 -- boarding-pass ticket per passenger (seat + optional QR), a stay/event its entrance passes. This
 -- removes the overlap where transport/accommodation carried their own per-person SEAT/QR_DATA — those
 -- now live on the linked ticket, which has an owner (or is a shared/group ticket).

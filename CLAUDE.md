@@ -22,8 +22,8 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
     verify, email-verify/password-reset, `/users/me`, FCM devices, rate-limit/CORS/body-size hardening.
   - **M3** trips & members: trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 /
     403), ghost members, invitation link/QR with atomic accept + in-place ghost→real merge.
-  - **M4** planning: places, events (timeline), transport, accommodation (with `QR_DATA` string),
-    checklist.
+  - **M4** planning: places, events (timeline), transport, accommodation, checklist. Per-person
+    seats/QRs are not on the leg/stay — they live on the linked **ticket** (see below).
   - **M5** money: budget per category, multi-currency expense with snapshot rate, `ExpenseSplitter`
     on integer minor units (EQUAL/EXACT/PERCENT/SHARES).
   - **M6** fund & settlement: contributions/fund-expenses, derived fund balance, greedy min-cash-flow
@@ -45,6 +45,12 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
     old single `EVENT_ID` FK; validated in `ExpenseService`, no cross-table FK).
   - **Group tickets.** `TICKETS.MEMBER_ID` is nullable (V14) — null = a shared ticket owned by the
     whole trip (request `shared=true`, needs EDITOR); surfaced in everyone's `/tickets/mine`.
+  - **Ticket→itinerary link.** A ticket is the per-person (or group) scannable pass — boarding pass,
+    e-ticket, entrance pass — and attaches to a leg/stay/event via `(ITINERARY_KIND, ITINERARY_ID)`,
+    mirroring the expense link (V17, validated in `TicketService`). So one flight leg has one ticket
+    per passenger (each with their seat + QR). Consequently **per-person `SEAT`/`QR_DATA` were dropped
+    from `TRANSPORTS`, and `QR_DATA` from `ACCOMMODATIONS`** (they duplicated the ticket); a ticket's
+    `QR_DATA` is now optional (a seat-only boarding pass).
   - **Place ↔ itinerary delete sync.** Deleting an event (or clearing its location) soft-deletes the
     place when no other event uses it; deleting a place unlinks it from events (they keep, lose
     location). See `EventService.pruneOrphanPlace` + `PlaceService.delete`.
