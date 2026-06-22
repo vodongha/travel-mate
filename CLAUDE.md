@@ -12,41 +12,44 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Backend:** Spring Boot 3.x · Java 21 REST API (this repo)
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
-- **Host (planned):** Oracle Cloud Always Free VM (Ampere A1 preferred — JVM needs the RAM)
-- **Status:** **M1–M7 implemented** (Maven/Spring Boot 3/Java 21, Oracle, schema `TRAVEL_MATE`).
+- **Host:** **Fly.io** (app `trippo-api`, region `sin`, 512MB) — serves the API at `/api/v1` **and**
+  the bundled Flutter web client at `/` (same origin). Live: https://trippo-api.fly.dev ·
+  https://trippo.io.vn. Android app is published as `vn.trippo.mate`.
+- **Status:** **Shipped — v1.0.0 in production.** Backend M1–M8 + the Flutter app (M9, Android + Web)
+  are complete and deployed; this section now records the architecture, not a roadmap.
   - **M1** foundation: `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway.
   - **M2** auth: BCrypt + JWT access, DB refresh tokens (rotation + reuse detection), Google ID-token
     verify, email-verify/password-reset, `/users/me`, FCM devices, rate-limit/CORS/body-size hardening.
-    Email sending is a dev `LoggingEmailSender` stub (real provider = Open Decision #4, deferred).
   - **M3** trips & members: trip CRUD, central `TripAccessGuard` (OWNER>EDITOR>VIEWER; uniform 404 /
     403), ghost members, invitation link/QR with atomic accept + in-place ghost→real merge.
   - **M4** planning: places, events (timeline), transport, accommodation (with `QR_DATA` string),
     checklist.
-  - **M5** money: budget per category, multi-currency expense with snapshot rate (manual override or
-    frankfurter, cached daily), `ExpenseSplitter` on integer minor units (EQUAL/EXACT/PERCENT/SHARES).
-  - **M6** fund & settlement: contributions/fund-expenses, derived fund balance, `SettlementEngine`
-    (greedy min-cash-flow on minor units; fund kept separate from personal settlement).
-  - **M7** dashboard & report: `GET /trips/{tripRid}/dashboard` (countdown, total budget, total
-    spent, fund balance, next event) and `GET /trips/{tripRid}/report` (budget vs actual per
-    category, unexpected list, debts from settlement). Read-only; reuses `FundService` + `SettlementService`.
-  - **Settings support** (slice for the Flutter app): public bilingual privacy page
-    `GET /api/v1/privacy?lang=vi|en` (router-only `com.travelmate.legal`, framable — no
-    `X-Frame-Options`, served via its own `@Order(1)` `SecurityFilterChain`); `POST
-    /auth/change-password` (sets the first password for a Google-only account, else verifies the
-    current one); `USERS.PHONE` (V8) + `phone`/display-currency on `GET/PATCH /users/me` and
-    `hasPassword`/`emailVerified` on the response; `DELETE /users/me` (soft-delete + revoke refresh
-    tokens — `JwtAuthenticationFilter` now also checks the user still exists so a live token for a
-    deleted account is rejected); and an exchange-rate table `GET /rates` + `POST /rates/refresh`
-    (`com.travelmate.common.money.ExchangeRateCache`, in-memory, base VND, refreshed every 12h by a
-    cron `@Scheduled` job, reuses `FrankfurterExchangeRateProvider`, `503` if the source is down).
-  - **M8** notifications: `SCHEDULED_NOTIFICATIONS` (V7); generated on trip/event change
-    (pre-trip 30/7/1-day countdowns, debt reminder, event reminder, hotel check-in), drained by a
-    `@Scheduled` dispatcher (idempotent PENDING→SENT/FAILED) that pushes via an `FcmSender`. FCM
-    sending is a dev `LoggingFcmSender` stub (real Firebase Admin SDK = drop-in, needs a service
-    account, deferred); single-instance (add ShedLock if multi-instance).
+  - **M5** money: budget per category, multi-currency expense with snapshot rate, `ExpenseSplitter`
+    on integer minor units (EQUAL/EXACT/PERCENT/SHARES).
+  - **M6** fund & settlement: contributions/fund-expenses, derived fund balance, greedy min-cash-flow
+    settlement on minor units (fund kept separate from personal settlement).
+  - **M7** dashboard & report. **M8** notifications (`SCHEDULED_NOTIFICATIONS`, `@Scheduled`
+    dispatcher, Firebase Admin SDK `FcmSender`; `app.fcm.enabled` gates real sending).
+  - **Settings/app slice:** public bilingual privacy page `GET /api/v1/privacy?lang=vi|en`
+    (router-only `com.travelmate.legal`, framable — own `@Order(1)` chain); `POST
+    /auth/change-password`; `USERS.PHONE` (V8) + profile fields on `/users/me`; `DELETE /users/me`;
+    exchange-rate table `GET /rates` + `POST /rates/refresh` (12h `@Scheduled`).
 
-  Integration tests (`*IT`) run against a docker-compose Oracle Free (`docker compose up -d` →
-  `./mvnw verify`); see CLAUDE "Testing". **M9 (Flutter app — Android + Web) is next.**
+  ### Recent architecture (post-launch refinements)
+  - **One canonical classification enum `Category`** (`common.entity.Category`). The former
+    `EventType`/`PlaceType`/`TicketType` were collapsed into it (V15 remaps legacy values —
+    HOTEL→ACCOMMODATION, RESTAURANT→FOOD, ATTRACTION→SIGHTSEEING, AIRPORT/STATION→TRANSPORT,
+    ticket EVENT→ACTIVITY). `TransportType` (FLIGHT/TRAIN/…) stays — it's a sub-type, not a category.
+  - **Polymorphic expense→itinerary link.** An expense attaches to any itinerary item via
+    `(ITINERARY_KIND, ITINERARY_ID)` where kind ∈ EVENT/TRANSPORT/ACCOMMODATION (V13 replaced the
+    old single `EVENT_ID` FK; validated in `ExpenseService`, no cross-table FK).
+  - **Group tickets.** `TICKETS.MEMBER_ID` is nullable (V14) — null = a shared ticket owned by the
+    whole trip (request `shared=true`, needs EDITOR); surfaced in everyone's `/tickets/mine`.
+  - **Place ↔ itinerary delete sync.** Deleting an event (or clearing its location) soft-deletes the
+    place when no other event uses it; deleting a place unlinks it from events (they keep, lose
+    location). See `EventService.pruneOrphanPlace` + `PlaceService.delete`.
+  - **Migrations run V1–V15.** Integration tests (`*IT`) run against a docker-compose Oracle Free
+    (`docker compose up -d` → `./mvnw verify`) and in CI against a `gvenzl/oracle-free` service.
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
@@ -154,6 +157,23 @@ see Open Decisions; don't leave orphaned references.
 - Store **all** timestamps UTC (`TIMESTAMP`). Display in `TRIP.TIMEZONE` (or the location's tz for
   cross-tz flights). Oracle `TIMESTAMP` carries no zone — set
   `spring.jpa.properties.hibernate.jdbc.time_zone=UTC` so the driver doesn't shift by the host tz.
+
+## Deployment (Fly.io)
+
+Single Fly.io app **`trippo-api`** (region `sin`, 512MB, `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65`).
+It serves the API under `/api/v1` **and the bundled Flutter web client at `/`** (same origin → the
+web app needs no CORS; `SpaWebConfig` falls back to `index.html` for client-side routes, never for
+`/api/**` or real asset files).
+
+- **CI/CD:** `.github/workflows/ci.yml` runs `./mvnw verify` against an Oracle Free service container
+  on `develop`. `deploy.yml` runs on push to `master` (and `workflow_dispatch`): it checks out the
+  **app repo's `master`**, builds the Flutter web with `--dart-define=SAME_ORIGIN=true`, bakes it into
+  `classpath:/static/`, then `flyctl deploy`. **An app-only release needs a backend (re)deploy** to
+  refresh the live web (`gh workflow run deploy.yml --repo vodongha/travel-mate --ref master`).
+- **Fly secrets:** `WALLET_TAR_B64` (Oracle wallet tar.gz, decoded by `scripts/fly_entrypoint.sh`),
+  `ORACLE_PASSWORD`, `FCM_CREDENTIALS_B64` (Firebase service account), `CORS_ALLOWED_ORIGINS`,
+  JWT secret + Google client-id. The `prod` profile uses schema `TRAVEL_MATE`.
+- The Oracle wallet and the Firebase service-account JSON are **never committed** (gitignored).
 
 ## Open decisions — settle these before/while coding (from spec review)
 

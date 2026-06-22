@@ -5,31 +5,33 @@ plans a trip together: timeline, transport, lodging, checklists, then tracks **p
 budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement** across
 **multiple currencies**.
 
-- **Backend:** Spring Boot 3.x · Java 21 (this repo) — REST API
+- **Backend:** Spring Boot 3.x · Java 21 (this repo) — REST API + serves the Flutter web client
 - **Database:** Oracle Autonomous Database (ADB) Free, via Flyway-managed schema
-- **Mobile:** Flutter (Android + iOS) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
+- **Mobile/Web:** Flutter (Android + Web) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
+- **Live:** https://trippo.io.vn · API https://trippo-api.fly.dev/api/v1 · Android `vn.trippo.mate`
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
-> **Status:** **M1–M8 implemented** on a Maven / Spring Boot 3 / Java 21 backend running against
-> Oracle (schema `TRAVEL_MATE`): foundation, auth, trips & members, planning (places/events/
-> transport/accommodation/checklist), money (budget + multi-currency expenses with snapshot rates +
-> splitting), shared fund & settlement, and the dashboard + end-of-trip report. Integration tests
-> run against a docker-compose Oracle Free (`docker compose up -d` → `./mvnw verify`), and scheduled
-> notifications (reminders + FCM dispatch). **M9 (Flutter app — Android + Web) is next.** The full
-> source of truth is [`docs/SPEC.md`](docs/SPEC.md).
+> **Status: shipped — v1.0.0 in production.** The Maven / Spring Boot 3 / Java 21 backend (schema
+> `TRAVEL_MATE`) and the Flutter app (Android + Web) are complete and deployed on **Fly.io**
+> (`trippo-api`, region `sin`), which serves both the API at `/api/v1` and the bundled web client at
+> `/`. Covers auth, trips & members, planning, multi-currency money + splitting, shared fund &
+> settlement, dashboard + report, and scheduled FCM notifications. Integration tests run against a
+> docker-compose Oracle Free (`docker compose up -d` → `./mvnw verify`). The full source of truth is
+> [`docs/SPEC.md`](docs/SPEC.md).
 
 ---
 
-## What it does (planned scope)
+## What it does
 
 | Area | Summary |
 |---|---|
 | **Auth** | Email/password (BCrypt) + Google Sign-In → JWT access + DB-stored refresh token (rotation + reuse detection). Email verify & password reset. FCM device registration. |
 | **Trips & members** | Trips scoped by membership with roles `OWNER`/`EDITOR`/`VIEWER`. **Ghost members** (people without the app) can be split with. Invite by link/QR. |
-| **Planning** | Timeline events, transport, accommodation, places (OpenStreetMap), checklists. |
-| **Money** | Multi-currency with **snapshot exchange rates** (free provider + manual override). Planned **budget** per category vs **actual expenses**. |
+| **Planning** | Timeline events, transport, accommodation, places (OpenStreetMap), checklists. One canonical `Category` classifies events/places/tickets/expenses. |
+| **Money** | Multi-currency with **snapshot exchange rates** (free provider + manual override). **Budget** per category vs **actual expenses**. An expense can attach to any itinerary item (event/transport/accommodation). |
 | **Shared fund** | Contributions and fund expenses; **balance is always derived by aggregation**, never stored. |
 | **Settlement** | Per-member net balance + **minimised** debt transactions (greedy min-cash-flow). |
+| **Tickets** | Per-member tickets/QR strings, plus **group tickets** (shared by the whole trip). |
 | **Dashboard & report** | Countdown, budget vs actual, fund balance, next event; end-of-trip report. |
 | **Notifications** | Scheduled FCM reminders (pre-trip 30/7/1 days, event/check-in, debt). |
 
@@ -66,20 +68,20 @@ The full module-by-module specification, DDL, and conventions live in [`docs/SPE
 | Push | Firebase Cloud Messaging |
 | Exchange rates | Free provider (frankfurter.app / exchangerate.host), daily cache, manual override |
 | Errors | RFC 7807 `ProblemDetail` |
-| Tests | JUnit 5 + **Testcontainers** (integration), unit tests for the Settlement Engine |
-| Host (planned) | Oracle Cloud Always Free VM (Ampere A1 preferred) |
+| Tests | JUnit 5 + Oracle Free container (integration), unit tests for the Settlement Engine |
+| Host | **Fly.io** (`trippo-api`, region `sin`) — serves API `/api/v1` + the Flutter web client at `/` |
 
 ---
 
-## Project structure (target — see [`docs/SPEC.md`](docs/SPEC.md) §3)
+## Project structure (see [`docs/SPEC.md`](docs/SPEC.md) §3)
 
 ```
 com.travelmate
-├── common        # BaseEntity, exceptions, security/JWT, audit, money (rate provider)
-├── user · trip · member · place
-├── timeline · transport · accommodation
+├── common        # BaseEntity, Category, exceptions, security/JWT, audit, money (rate provider), web (SPA + envelope)
+├── user · trip · place · legal
+├── timeline · transport · accommodation · ticket
 ├── budget · expense · fund · settlement
-├── checklist · dashboard · notification
+├── checklist · dashboard · report · notification
 ```
 
 Each module is a vertical slice: `*Controller → *Service → *Repository → *Entity` + `dto/` + `mapper/`.
@@ -127,7 +129,10 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
    (`POST /auth/change-password`), profile `phone` + display currency on `GET/PATCH /users/me`,
    self-service account deletion (`DELETE /users/me`), and an exchange-rate table
    (`GET /rates`, `POST /rates/refresh`, 12h refresh) — the slice the Flutter app needs.
-10. **M9 — Flutter app.**
+10. **M9 — Flutter app (Android + Web) ✅.**
+11. **Shipped ✅:** v1.0.0 live on Fly.io (API + bundled web at one origin); Android `vn.trippo.mate`.
+    Post-launch: unified `Category` taxonomy, polymorphic expense→itinerary link, group tickets,
+    place↔itinerary delete sync (migrations V1–V15).
 
 ---
 
