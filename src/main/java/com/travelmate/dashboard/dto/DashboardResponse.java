@@ -1,6 +1,6 @@
 package com.travelmate.dashboard.dto;
 
-import com.travelmate.timeline.EventType;
+import com.travelmate.common.entity.Category;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,6 +18,6 @@ public record DashboardResponse(
         BigDecimal fundBalance,
         NextEvent nextEvent) {
 
-    public record NextEvent(String rid, String title, EventType eventType, Instant startTime) {
+    public record NextEvent(String rid, String title, Category eventType, Instant startTime) {
     }
 }

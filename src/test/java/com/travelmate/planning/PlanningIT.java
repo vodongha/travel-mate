@@ -33,7 +33,7 @@ class PlanningIT extends AbstractIntegrationTest {
 
         // create a place
         JsonNode place = post("/api/v1/trips/" + tripRid + "/places",
-                Map.of("name", "Fushimi Inari", "placeType", "ATTRACTION",
+                Map.of("name", "Fushimi Inari", "placeType", "SIGHTSEEING",
                         "latitude", 34.9671, "longitude", 135.7727), owner).getBody().get("data");
         assertThat(place.get("rid").asText()).isNotBlank();
         assertThat(place.has("id")).isFalse();

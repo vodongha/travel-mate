@@ -1,14 +1,14 @@
 package com.travelmate.timeline.dto;
 
+import com.travelmate.common.entity.Category;
 import com.travelmate.timeline.Event;
-import com.travelmate.timeline.EventType;
 
 import java.time.Instant;
 
 public record EventResponse(
         String rid,
         String title,
-        EventType eventType,
+        Category eventType,
         Instant startTime,
         Instant endTime,
         String placeRid,

@@ -2,8 +2,8 @@ package com.travelmate.notification;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.travelmate.common.entity.Category;
 import com.travelmate.timeline.Event;
-import com.travelmate.timeline.EventType;
 import com.travelmate.trip.Trip;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,9 +78,12 @@ public class NotificationService {
                             "Starts in " + EVENT_REMINDER_MINUTES + " minutes.",
                             eventDeeplink(trip, event)));
         }
-        if (event.getEventType() == EventType.HOTEL && event.getStartTime().isAfter(now)) {
+        // Accommodation check-in reminder. (Accommodation is also a dedicated entity now; this still
+        // fires for any ACCOMMODATION-categorised event. TODO: drive check-in off the Accommodation
+        // entity's checkinTime — needs a non-event notification target.)
+        if (event.getEventType() == Category.ACCOMMODATION && event.getStartTime().isAfter(now)) {
             enqueue(trip.getId(), null, event.getId(), NotificationType.HOTEL_CHECKIN, event.getStartTime(),
-                    payload("Check-in: " + event.getTitle(), "It's hotel check-in time.",
+                    payload("Check-in: " + event.getTitle(), "It's check-in time.",
                             eventDeeplink(trip, event)));
         }
     }
