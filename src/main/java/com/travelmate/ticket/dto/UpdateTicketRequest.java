@@ -15,5 +15,8 @@ public record UpdateTicketRequest(
         Category ticketType,
         @Size(max = 4000) String qrData,
         @Size(max = 50) String seat,
+        // Non-null itineraryRid (re)sets the link; blank clears it; omitted leaves it unchanged.
+        @Size(max = 20) String itineraryKind,
+        @Size(max = 36) String itineraryRid,
         @Size(max = 2000) String note) {
 }

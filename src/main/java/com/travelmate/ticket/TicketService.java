@@ -1,10 +1,17 @@
 package com.travelmate.ticket;
 
+import com.travelmate.accommodation.Accommodation;
+import com.travelmate.accommodation.AccommodationRepository;
 import com.travelmate.common.exception.ApiException;
 import com.travelmate.common.exception.ErrorCode;
+import com.travelmate.expense.ItineraryKind;
 import com.travelmate.ticket.dto.CreateTicketRequest;
 import com.travelmate.ticket.dto.TicketResponse;
 import com.travelmate.ticket.dto.UpdateTicketRequest;
+import com.travelmate.timeline.Event;
+import com.travelmate.timeline.EventRepository;
+import com.travelmate.transport.Transport;
+import com.travelmate.transport.TransportRepository;
 import com.travelmate.trip.MemberRole;
 import com.travelmate.trip.TripAccessGuard;
 import com.travelmate.trip.TripAccessGuard.TripContext;
@@ -29,13 +36,22 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final TripMemberRepository tripMemberRepository;
+    private final EventRepository eventRepository;
+    private final TransportRepository transportRepository;
+    private final AccommodationRepository accommodationRepository;
     private final TripAccessGuard guard;
 
     public TicketService(TicketRepository ticketRepository,
                          TripMemberRepository tripMemberRepository,
+                         EventRepository eventRepository,
+                         TransportRepository transportRepository,
+                         AccommodationRepository accommodationRepository,
                          TripAccessGuard guard) {
         this.ticketRepository = ticketRepository;
         this.tripMemberRepository = tripMemberRepository;
+        this.eventRepository = eventRepository;
+        this.transportRepository = transportRepository;
+        this.accommodationRepository = accommodationRepository;
         this.guard = guard;
     }
 
@@ -44,8 +60,9 @@ public class TicketService {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
         Long me = ctx.membership().getId();
         Map<Long, TripMember> members = memberMap(ctx.trip().getId());
+        ItineraryRids itin = itineraryRids(ctx.trip().getId());
         return ticketRepository.findByTripIdOrderByTicketTypeAscIdAsc(ctx.trip().getId()).stream()
-                .map(t -> toResponse(t, members, me))
+                .map(t -> toResponse(t, members, itin, me))
                 .toList();
     }
 
@@ -59,8 +76,9 @@ public class TicketService {
                 ticketRepository.findByTripIdAndMemberIdOrderByTicketTypeAscIdAsc(ctx.trip().getId(), me);
         List<Ticket> group =
                 ticketRepository.findByTripIdAndMemberIdIsNullOrderByTicketTypeAscIdAsc(ctx.trip().getId());
+        ItineraryRids itin = itineraryRids(ctx.trip().getId());
         return Stream.concat(mine.stream(), group.stream())
-                .map(t -> toResponse(t, members, me))
+                .map(t -> toResponse(t, members, itin, me))
                 .toList();
     }
 
@@ -89,8 +107,10 @@ public class TicketService {
         ticket.setQrData(request.qrData());
         ticket.setSeat(request.seat());
         ticket.setNote(request.note());
+        applyItinerary(ticket, request.itineraryKind(), request.itineraryRid(), ctx.trip().getId());
         ticket = ticketRepository.save(ticket);
-        return toResponse(ticket, memberMap(ctx.trip().getId()), ctx.membership().getId());
+        return toResponse(ticket, memberMap(ctx.trip().getId()),
+                itineraryRids(ctx.trip().getId()), ctx.membership().getId());
     }
 
     @Transactional
@@ -122,7 +142,12 @@ public class TicketService {
         if (request.note() != null) {
             ticket.setNote(request.note().isBlank() ? null : request.note());
         }
-        return toResponse(ticket, memberMap(ctx.trip().getId()), ctx.membership().getId());
+        // A non-null itineraryRid (re)sets the link; blank clears it; omitted leaves it unchanged.
+        if (request.itineraryRid() != null) {
+            applyItinerary(ticket, request.itineraryKind(), request.itineraryRid(), ctx.trip().getId());
+        }
+        return toResponse(ticket, memberMap(ctx.trip().getId()),
+                itineraryRids(ctx.trip().getId()), ctx.membership().getId());
     }
 
     @Transactional
@@ -166,11 +191,72 @@ public class TicketService {
                 .collect(Collectors.toMap(TripMember::getId, m -> m));
     }
 
-    private TicketResponse toResponse(Ticket t, Map<Long, TripMember> members, Long me) {
+    private TicketResponse toResponse(Ticket t, Map<Long, TripMember> members, ItineraryRids itin, Long me) {
         TripMember m = t.getMemberId() == null ? null : members.get(t.getMemberId());
         return TicketResponse.from(t,
                 m == null ? null : m.getRid(),
                 m == null ? null : m.getDisplayName(),
-                me != null && me.equals(t.getMemberId()));
+                me != null && me.equals(t.getMemberId()),
+                itin.rid(t.getItineraryKind(), t.getItineraryId()));
+    }
+
+    private ItineraryRids itineraryRids(Long tripId) {
+        return new ItineraryRids(
+                eventRepository.findByTripIdOrderByStartTimeAsc(tripId).stream()
+                        .collect(Collectors.toMap(Event::getId, Event::getRid)),
+                transportRepository.findByTripIdOrderByDepartureTimeAsc(tripId).stream()
+                        .collect(Collectors.toMap(Transport::getId, Transport::getRid)),
+                accommodationRepository.findByTripIdOrderByCheckinTimeAsc(tripId).stream()
+                        .collect(Collectors.toMap(Accommodation::getId, Accommodation::getRid)));
+    }
+
+    /** The rid maps for all three itinerary tables, so a polymorphic (kind, id) link resolves to a rid. */
+    private record ItineraryRids(Map<Long, String> event, Map<Long, String> transport,
+                                 Map<Long, String> accommodation) {
+        String rid(ItineraryKind kind, Long id) {
+            if (kind == null || id == null) {
+                return null;
+            }
+            return switch (kind) {
+                case EVENT -> event.get(id);
+                case TRANSPORT -> transport.get(id);
+                case ACCOMMODATION -> accommodation.get(id);
+            };
+        }
+    }
+
+    /**
+     * Set (or clear) a ticket's polymorphic itinerary link — a blank rid clears it; otherwise the
+     * (kind, rid) target is validated to belong to this trip before its id is stored.
+     */
+    private void applyItinerary(Ticket ticket, String kindStr, String rid, Long tripId) {
+        if (rid == null || rid.isBlank()) {
+            ticket.setItineraryKind(null);
+            ticket.setItineraryId(null);
+            return;
+        }
+        if (kindStr == null || kindStr.isBlank()) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED,
+                    "itineraryKind is required when itineraryRid is given.");
+        }
+        ItineraryKind kind;
+        try {
+            kind = ItineraryKind.valueOf(kindStr.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "Unknown itineraryKind: " + kindStr);
+        }
+        Long id = switch (kind) {
+            case EVENT -> eventRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Event::getId).orElse(null);
+            case TRANSPORT -> transportRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Transport::getId).orElse(null);
+            case ACCOMMODATION -> accommodationRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Accommodation::getId).orElse(null);
+        };
+        if (id == null) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "Itinerary item is not part of this trip.");
+        }
+        ticket.setItineraryKind(kind);
+        ticket.setItineraryId(id);
     }
 }
