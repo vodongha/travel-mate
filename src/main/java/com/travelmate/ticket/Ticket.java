@@ -2,6 +2,7 @@ package com.travelmate.ticket;
 
 import com.travelmate.common.entity.BaseEntity;
 import com.travelmate.common.entity.Category;
+import com.travelmate.expense.ItineraryKind;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,11 +36,21 @@ public class Ticket extends BaseEntity {
     @Column(name = "TICKET_TYPE", nullable = false, length = 20)
     private Category ticketType = Category.OTHER;
 
-    @Column(name = "QR_DATA", nullable = false, length = 4000)
+    // Optional: a boarding pass may be seat-only (no scannable QR string).
+    @Column(name = "QR_DATA", length = 4000)
     private String qrData;
 
     @Column(name = "SEAT", length = 50)
     private String seat;
+
+    // Optional polymorphic link to the itinerary item this ticket is for (a flight leg, a stay, an
+    // event), exactly like an expense's link — so a flight's boarding passes hang off that leg.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ITINERARY_KIND", length = 20)
+    private ItineraryKind itineraryKind;
+
+    @Column(name = "ITINERARY_ID")
+    private Long itineraryId;
 
     @Column(name = "NOTE", length = 2000)
     private String note;
@@ -90,6 +101,22 @@ public class Ticket extends BaseEntity {
 
     public void setSeat(String seat) {
         this.seat = seat;
+    }
+
+    public ItineraryKind getItineraryKind() {
+        return itineraryKind;
+    }
+
+    public void setItineraryKind(ItineraryKind itineraryKind) {
+        this.itineraryKind = itineraryKind;
+    }
+
+    public Long getItineraryId() {
+        return itineraryId;
+    }
+
+    public void setItineraryId(Long itineraryId) {
+        this.itineraryId = itineraryId;
     }
 
     public String getNote() {

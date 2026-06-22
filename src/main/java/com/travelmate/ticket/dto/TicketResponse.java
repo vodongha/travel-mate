@@ -14,10 +14,16 @@ public record TicketResponse(
         Category ticketType,
         String qrData,
         String seat,
+        // The itinerary item this ticket is for, if any (kind = EVENT | TRANSPORT | ACCOMMODATION).
+        String itineraryKind,
+        String itineraryRid,
         String note) {
 
-    public static TicketResponse from(Ticket t, String memberRid, String memberName, boolean mine) {
+    public static TicketResponse from(Ticket t, String memberRid, String memberName, boolean mine,
+                                      String itineraryRid) {
         return new TicketResponse(t.getRid(), memberRid, memberName, mine, t.getMemberId() == null,
-                t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(), t.getNote());
+                t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(),
+                t.getItineraryKind() == null ? null : t.getItineraryKind().name(), itineraryRid,
+                t.getNote());
     }
 }

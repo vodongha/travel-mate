@@ -46,7 +46,6 @@ public class AccommodationService {
         a.setAddress(request.address());
         a.setCheckinTime(request.checkinTime());
         a.setCheckoutTime(request.checkoutTime());
-        a.setQrData(request.qrData());
         a.setNote(request.note());
         return AccommodationResponse.from(accommodationRepository.save(a));
     }
@@ -76,9 +75,6 @@ public class AccommodationService {
         }
         if (request.checkoutTime() != null) {
             a.setCheckoutTime(request.checkoutTime());
-        }
-        if (request.qrData() != null) {
-            a.setQrData(blankToNull(request.qrData()));
         }
         if (request.note() != null) {
             a.setNote(blankToNull(request.note()));

@@ -12,7 +12,11 @@ public record CreateTicketRequest(
         Boolean shared,
         @NotBlank @Size(max = 200) String title,
         Category ticketType,
-        @NotBlank @Size(max = 4000) String qrData,
+        // Optional: a boarding pass may be seat-only, with no scannable QR string.
+        @Size(max = 4000) String qrData,
         @Size(max = 50) String seat,
+        // Optional link to the itinerary item this ticket is for (EVENT | TRANSPORT | ACCOMMODATION).
+        @Size(max = 20) String itineraryKind,
+        @Size(max = 36) String itineraryRid,
         @Size(max = 2000) String note) {
 }
