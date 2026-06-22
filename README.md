@@ -1,4 +1,4 @@
-# TravelMate
+# Travel Mate
 
 Group-trip planning & shared-expense manager — a group (family, friends, colleagues)
 plans a trip together: timeline, transport, lodging, checklists, then tracks **planned

@@ -29,7 +29,7 @@ public class LegalController {
     /** Bump this whenever the policy wording below changes. */
     static final String EFFECTIVE_DATE = "2026-06-21";
 
-    private static final String APP_NAME = "TravelMate";
+    private static final String APP_NAME = "Travel Mate";
     private static final String DEVELOPER = "Võ Đông Hà";
     private static final String CONTACT_EMAIL = "vodongha@hotmail.com";
     private static final String WEBSITE = "https://vodongha.id.vn";
