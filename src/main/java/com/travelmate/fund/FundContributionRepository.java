@@ -14,6 +14,9 @@ public interface FundContributionRepository extends JpaRepository<FundContributi
 
     Optional<FundContribution> findByRid(String rid);
 
+    /** A member's fund contributions — used to re-point them when two members are merged. */
+    List<FundContribution> findByMemberId(Long memberId);
+
     @Query("SELECT COALESCE(SUM(c.amountBase), 0) FROM FundContribution c WHERE c.tripId = :tripId")
     BigDecimal sumAmountBaseByTrip(@Param("tripId") Long tripId);
 }

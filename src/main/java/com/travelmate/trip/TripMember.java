@@ -28,6 +28,11 @@ public class TripMember extends BaseEntity {
     @Column(name = "DISPLAY_NAME", nullable = false, length = 150)
     private String displayName;
 
+    // Optional email for a ghost member: lets invitation-accept auto-merge the ghost into the real
+    // account that joins with this email (and is shown so the owner can set/correct it).
+    @Column(name = "EMAIL", length = 320)
+    private String email;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "ROLE", nullable = false, length = 20)
     private MemberRole role;
@@ -61,6 +66,14 @@ public class TripMember extends BaseEntity {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public MemberRole getRole() {

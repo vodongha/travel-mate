@@ -5,7 +5,8 @@ import com.travelmate.common.security.CurrentUser;
 import com.travelmate.common.web.ApiResponse;
 import com.travelmate.trip.dto.AddMemberRequest;
 import com.travelmate.trip.dto.MemberResponse;
-import com.travelmate.trip.dto.UpdateMemberRoleRequest;
+import com.travelmate.trip.dto.MergeMemberRequest;
+import com.travelmate.trip.dto.UpdateMemberRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,11 +47,25 @@ public class TripMemberController {
     }
 
     @PatchMapping("/{memberRid}")
-    public ApiResponse<MemberResponse> updateRole(@CurrentUser AuthPrincipal principal,
-                                                  @PathVariable String tripRid,
-                                                  @PathVariable String memberRid,
-                                                  @Valid @RequestBody UpdateMemberRoleRequest request) {
-        return ApiResponse.ok(tripService.updateMemberRole(principal.id(), tripRid, memberRid, request));
+    public ApiResponse<MemberResponse> update(@CurrentUser AuthPrincipal principal,
+                                              @PathVariable String tripRid,
+                                              @PathVariable String memberRid,
+                                              @Valid @RequestBody UpdateMemberRequest request) {
+        return ApiResponse.ok(tripService.updateMember(principal.id(), tripRid, memberRid, request));
+    }
+
+    /**
+     * Merge {@code memberRid} (typically a ghost) INTO {@code targetRid}: re-point all of the
+     * source's expenses, shares, fund contributions, tickets and checklist assignments to the target,
+     * then soft-delete the source. OWNER only.
+     */
+    @PostMapping("/{memberRid}/merge")
+    public ApiResponse<MemberResponse> merge(@CurrentUser AuthPrincipal principal,
+                                             @PathVariable String tripRid,
+                                             @PathVariable String memberRid,
+                                             @Valid @RequestBody MergeMemberRequest request) {
+        return ApiResponse.ok(
+                tripService.mergeMember(principal.id(), tripRid, memberRid, request.targetRid()));
     }
 
     @DeleteMapping("/{memberRid}")
