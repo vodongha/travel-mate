@@ -8,6 +8,8 @@ public record TicketResponse(
         String memberRid,
         String memberName,
         boolean mine,
+        // True for a group ticket (no owner, shared by the whole trip); memberRid/memberName are null.
+        boolean shared,
         String title,
         TicketType ticketType,
         String qrData,
@@ -15,7 +17,7 @@ public record TicketResponse(
         String note) {
 
     public static TicketResponse from(Ticket t, String memberRid, String memberName, boolean mine) {
-        return new TicketResponse(t.getRid(), memberRid, memberName, mine,
+        return new TicketResponse(t.getRid(), memberRid, memberName, mine, t.getMemberId() == null,
                 t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(), t.getNote());
     }
 }

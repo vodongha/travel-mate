@@ -20,7 +20,10 @@ public record ExpenseResponse(
         BigDecimal amountBase,
         String payerRid,
         String placeRid,
-        String eventRid,
+        // Polymorphic itinerary link: kind (EVENT/TRANSPORT/ACCOMMODATION) + that item's rid, or both
+        // null when the expense is standalone.
+        String itineraryKind,
+        String itineraryRid,
         boolean paidFromFund,
         String note,
         Instant spentAt,
@@ -29,8 +32,8 @@ public record ExpenseResponse(
     public record ShareView(String memberRid, BigDecimal shareBase) {
     }
 
-    public static ExpenseResponse from(Expense e, String payerRid, String placeRid, String eventRid,
-                                       List<ShareView> shares) {
+    public static ExpenseResponse from(Expense e, String payerRid, String placeRid,
+                                       String itineraryRid, List<ShareView> shares) {
         return new ExpenseResponse(
                 e.getRid(),
                 e.getTitle(),
@@ -42,7 +45,8 @@ public record ExpenseResponse(
                 e.getAmountBase(),
                 payerRid,
                 placeRid,
-                eventRid,
+                e.getItineraryKind() == null ? null : e.getItineraryKind().name(),
+                itineraryRid,
                 e.isPaidFromFund(),
                 e.getNote(),
                 e.getSpentAt(),

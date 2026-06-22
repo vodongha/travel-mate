@@ -10,11 +10,15 @@ import com.travelmate.expense.dto.ExpenseResponse;
 import com.travelmate.expense.dto.ExpenseResponse.ShareView;
 import com.travelmate.expense.dto.ExpenseShareInput;
 import com.travelmate.expense.dto.UpdateExpenseRequest;
+import com.travelmate.accommodation.Accommodation;
+import com.travelmate.accommodation.AccommodationRepository;
 import com.travelmate.place.Place;
 import com.travelmate.place.PlaceRepository;
 import com.travelmate.place.PlaceService;
 import com.travelmate.timeline.Event;
 import com.travelmate.timeline.EventRepository;
+import com.travelmate.transport.Transport;
+import com.travelmate.transport.TransportRepository;
 import com.travelmate.trip.MemberRole;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripAccessGuard;
@@ -44,6 +48,8 @@ public class ExpenseService {
     private final PlaceRepository placeRepository;
     private final PlaceService placeService;
     private final EventRepository eventRepository;
+    private final TransportRepository transportRepository;
+    private final AccommodationRepository accommodationRepository;
     private final TripAccessGuard guard;
     private final MoneyService moneyService;
     private final RateResolver rateResolver;
@@ -55,6 +61,8 @@ public class ExpenseService {
                           PlaceRepository placeRepository,
                           PlaceService placeService,
                           EventRepository eventRepository,
+                          TransportRepository transportRepository,
+                          AccommodationRepository accommodationRepository,
                           TripAccessGuard guard,
                           MoneyService moneyService,
                           RateResolver rateResolver,
@@ -65,6 +73,8 @@ public class ExpenseService {
         this.placeRepository = placeRepository;
         this.placeService = placeService;
         this.eventRepository = eventRepository;
+        this.transportRepository = transportRepository;
+        this.accommodationRepository = accommodationRepository;
         this.guard = guard;
         this.moneyService = moneyService;
         this.rateResolver = rateResolver;
@@ -80,13 +90,13 @@ public class ExpenseService {
         }
         Map<Long, String> memberRids = memberRidMap(trip.getId());
         Map<Long, String> placeRids = placeRidMap(trip.getId());
-        Map<Long, String> eventRids = eventRidMap(trip.getId());
+        ItineraryRids itinRids = itineraryRids(trip.getId());
         Map<Long, List<ExpenseShare>> sharesByExpense = shareRepository
                 .findByExpenseIdIn(expenses.stream().map(Expense::getId).toList())
                 .stream().collect(Collectors.groupingBy(ExpenseShare::getExpenseId));
 
         return expenses.stream()
-                .map(e -> toResponse(e, memberRids, placeRids, eventRids,
+                .map(e -> toResponse(e, memberRids, placeRids, itinRids,
                         sharesByExpense.getOrDefault(e.getId(), List.of())))
                 .toList();
     }
@@ -96,7 +106,7 @@ public class ExpenseService {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER).trip();
         Expense e = loadInTrip(expenseRid, trip.getId());
         return toResponse(e, memberRidMap(trip.getId()), placeRidMap(trip.getId()),
-                eventRidMap(trip.getId()), shareRepository.findByExpenseId(e.getId()));
+                itineraryRids(trip.getId()), shareRepository.findByExpenseId(e.getId()));
     }
 
     @Transactional
@@ -124,7 +134,7 @@ public class ExpenseService {
         expense.setAmountBase(amountBase);
         expense.setPayerId(payerId);
         expense.setPlaceId(placeId);
-        expense.setEventId(resolveEventId(request.eventRid(), trip.getId()));
+        applyItinerary(expense, request.itineraryKind(), request.itineraryRid(), trip.getId());
         expense.setPaidFromFund(request.paidFromFund());
         expense.setNote(request.note());
         expense.setSpentAt(request.spentAt() != null ? request.spentAt() : Instant.now());
@@ -155,10 +165,9 @@ public class ExpenseService {
                     ? null
                     : placeService.resolvePlaceId(request.placeRid(), trip.getId()));
         }
-        if (request.eventRid() != null) {
-            e.setEventId(request.eventRid().isBlank()
-                    ? null
-                    : resolveEventId(request.eventRid(), trip.getId()));
+        // A non-null itineraryRid (re)sets the link; blank clears it. Omitted leaves it unchanged.
+        if (request.itineraryRid() != null) {
+            applyItinerary(e, request.itineraryKind(), request.itineraryRid(), trip.getId());
         }
         if (request.note() != null) {
             e.setNote(request.note().isBlank() ? null : request.note());
@@ -167,7 +176,7 @@ public class ExpenseService {
             e.setSpentAt(request.spentAt());
         }
         return toResponse(e, memberRidMap(trip.getId()), placeRidMap(trip.getId()),
-                eventRidMap(trip.getId()), shareRepository.findByExpenseId(e.getId()));
+                itineraryRids(trip.getId()), shareRepository.findByExpenseId(e.getId()));
     }
 
     @Transactional
@@ -235,20 +244,72 @@ public class ExpenseService {
                 .collect(Collectors.toMap(Event::getId, Event::getRid));
     }
 
-    /** Resolve an event rid to its id, confirming it belongs to the trip; null for a blank rid. */
-    private Long resolveEventId(String eventRid, Long tripId) {
-        if (eventRid == null || eventRid.isBlank()) {
-            return null;
+    private Map<Long, String> transportRidMap(Long tripId) {
+        return transportRepository.findByTripIdOrderByDepartureTimeAsc(tripId).stream()
+                .collect(Collectors.toMap(Transport::getId, Transport::getRid));
+    }
+
+    private Map<Long, String> accommodationRidMap(Long tripId) {
+        return accommodationRepository.findByTripIdOrderByCheckinTimeAsc(tripId).stream()
+                .collect(Collectors.toMap(Accommodation::getId, Accommodation::getRid));
+    }
+
+    private ItineraryRids itineraryRids(Long tripId) {
+        return new ItineraryRids(eventRidMap(tripId), transportRidMap(tripId), accommodationRidMap(tripId));
+    }
+
+    /** The rid maps for all three itinerary tables, so a polymorphic (kind, id) link resolves to a rid. */
+    private record ItineraryRids(Map<Long, String> event, Map<Long, String> transport,
+                                 Map<Long, String> accommodation) {
+        String rid(ItineraryKind kind, Long id) {
+            if (kind == null || id == null) {
+                return null;
+            }
+            return switch (kind) {
+                case EVENT -> event.get(id);
+                case TRANSPORT -> transport.get(id);
+                case ACCOMMODATION -> accommodation.get(id);
+            };
         }
-        Event event = eventRepository.findByRid(eventRid)
-                .filter(ev -> tripId.equals(ev.getTripId()))
-                .orElseThrow(() -> new ApiException(ErrorCode.VALIDATION_FAILED,
-                        "Event is not part of this trip."));
-        return event.getId();
+    }
+
+    /**
+     * Set (or clear) an expense's polymorphic itinerary link. A blank rid clears it; otherwise the
+     * (kind, rid) target is validated to belong to this trip before its id is stored.
+     */
+    private void applyItinerary(Expense expense, String kindStr, String rid, Long tripId) {
+        if (rid == null || rid.isBlank()) {
+            expense.setItineraryKind(null);
+            expense.setItineraryId(null);
+            return;
+        }
+        if (kindStr == null || kindStr.isBlank()) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED,
+                    "itineraryKind is required when itineraryRid is given.");
+        }
+        ItineraryKind kind;
+        try {
+            kind = ItineraryKind.valueOf(kindStr.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "Unknown itineraryKind: " + kindStr);
+        }
+        Long id = switch (kind) {
+            case EVENT -> eventRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Event::getId).orElse(null);
+            case TRANSPORT -> transportRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Transport::getId).orElse(null);
+            case ACCOMMODATION -> accommodationRepository.findByRid(rid)
+                    .filter(x -> tripId.equals(x.getTripId())).map(Accommodation::getId).orElse(null);
+        };
+        if (id == null) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "Itinerary item is not part of this trip.");
+        }
+        expense.setItineraryKind(kind);
+        expense.setItineraryId(id);
     }
 
     private ExpenseResponse toResponse(Expense e, Map<Long, String> memberRids,
-                                       Map<Long, String> placeRids, Map<Long, String> eventRids,
+                                       Map<Long, String> placeRids, ItineraryRids itinRids,
                                        List<ExpenseShare> shares) {
         List<ShareView> shareViews = shares.stream()
                 .map(s -> new ShareView(memberRids.get(s.getMemberId()), s.getShareBase()))
@@ -257,7 +318,7 @@ public class ExpenseService {
         return ExpenseResponse.from(e,
                 memberRids.get(e.getPayerId()),
                 e.getPlaceId() == null ? null : placeRids.get(e.getPlaceId()),
-                e.getEventId() == null ? null : eventRids.get(e.getEventId()),
+                itinRids.rid(e.getItineraryKind(), e.getItineraryId()),
                 shareViews);
     }
 }

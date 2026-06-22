@@ -55,8 +55,14 @@ public class Expense extends BaseEntity {
     @Column(name = "PLACE_ID")
     private Long placeId;
 
-    @Column(name = "EVENT_ID")
-    private Long eventId;
+    // Polymorphic link to one itinerary item (event / transport leg / accommodation stay), or null
+    // when standalone. The pair (kind, id) identifies the row — see ItineraryKind.
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ITINERARY_KIND", length = 20)
+    private ItineraryKind itineraryKind;
+
+    @Column(name = "ITINERARY_ID")
+    private Long itineraryId;
 
     @Column(name = "PAID_FROM_FUND", nullable = false)
     private boolean paidFromFund = false;
@@ -147,12 +153,20 @@ public class Expense extends BaseEntity {
         this.placeId = placeId;
     }
 
-    public Long getEventId() {
-        return eventId;
+    public ItineraryKind getItineraryKind() {
+        return itineraryKind;
     }
 
-    public void setEventId(Long eventId) {
-        this.eventId = eventId;
+    public void setItineraryKind(ItineraryKind itineraryKind) {
+        this.itineraryKind = itineraryKind;
+    }
+
+    public Long getItineraryId() {
+        return itineraryId;
+    }
+
+    public void setItineraryId(Long itineraryId) {
+        this.itineraryId = itineraryId;
     }
 
     public boolean isPaidFromFund() {
