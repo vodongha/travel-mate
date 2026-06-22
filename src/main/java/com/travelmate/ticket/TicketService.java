@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Per-member tickets (a member shows their own ticket QR at the gate). Read is open to any member;
@@ -53,8 +54,12 @@ public class TicketService {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
         Long me = ctx.membership().getId();
         Map<Long, TripMember> members = memberMap(ctx.trip().getId());
-        return ticketRepository
-                .findByTripIdAndMemberIdOrderByTicketTypeAscIdAsc(ctx.trip().getId(), me).stream()
+        // "Mine" = my own tickets plus any group ticket (shared, relevant to everyone at the gate).
+        List<Ticket> mine =
+                ticketRepository.findByTripIdAndMemberIdOrderByTicketTypeAscIdAsc(ctx.trip().getId(), me);
+        List<Ticket> group =
+                ticketRepository.findByTripIdAndMemberIdIsNullOrderByTicketTypeAscIdAsc(ctx.trip().getId());
+        return Stream.concat(mine.stream(), group.stream())
                 .map(t -> toResponse(t, members, me))
                 .toList();
     }
@@ -62,10 +67,16 @@ public class TicketService {
     @Transactional
     public TicketResponse create(Long userId, String tripRid, CreateTicketRequest request) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
-        // No member given → the ticket is the caller's own (any role); a given member needs the check.
-        Long targetMemberId = (request.memberRid() == null || request.memberRid().isBlank())
-                ? ctx.membership().getId()
-                : requireMemberId(request.memberRid(), ctx.trip().getId());
+        // shared → group ticket (no owner); else no member given → the caller's own (any role);
+        // else the named member. A group/other-member ticket needs the manage-others (EDITOR) check.
+        Long targetMemberId;
+        if (Boolean.TRUE.equals(request.shared())) {
+            targetMemberId = null;
+        } else if (request.memberRid() == null || request.memberRid().isBlank()) {
+            targetMemberId = ctx.membership().getId();
+        } else {
+            targetMemberId = requireMemberId(request.memberRid(), ctx.trip().getId());
+        }
         requireManagePermission(ctx, targetMemberId);
 
         Ticket ticket = new Ticket();
@@ -88,7 +99,10 @@ public class TicketService {
         Ticket ticket = loadInTrip(ticketRid, ctx.trip().getId());
         requireManagePermission(ctx, ticket.getMemberId());
 
-        if (request.memberRid() != null && !request.memberRid().isBlank()) {
+        if (Boolean.TRUE.equals(request.shared())) {
+            requireManagePermission(ctx, null); // converting to a group ticket needs EDITOR
+            ticket.setMemberId(null);
+        } else if (request.memberRid() != null && !request.memberRid().isBlank()) {
             Long newMemberId = requireMemberId(request.memberRid(), ctx.trip().getId());
             requireManagePermission(ctx, newMemberId); // reassigning to someone else needs EDITOR
             ticket.setMemberId(newMemberId);
@@ -153,10 +167,10 @@ public class TicketService {
     }
 
     private TicketResponse toResponse(Ticket t, Map<Long, TripMember> members, Long me) {
-        TripMember m = members.get(t.getMemberId());
+        TripMember m = t.getMemberId() == null ? null : members.get(t.getMemberId());
         return TicketResponse.from(t,
                 m == null ? null : m.getRid(),
                 m == null ? null : m.getDisplayName(),
-                t.getMemberId().equals(me));
+                me != null && me.equals(t.getMemberId()));
     }
 }

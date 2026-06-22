@@ -16,7 +16,9 @@ public record UpdateExpenseRequest(
         Category category,
         ExpenseType expenseType,
         @Size(max = 36) String placeRid,
-        @Size(max = 36) String eventRid,
+        // Polymorphic itinerary link (see CreateExpenseRequest). A blank itineraryRid clears it.
+        @Size(max = 20) String itineraryKind,
+        @Size(max = 36) String itineraryRid,
         @Size(max = 2000) String note,
         Instant spentAt) {
 }
