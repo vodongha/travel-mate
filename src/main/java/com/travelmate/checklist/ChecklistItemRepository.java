@@ -10,4 +10,7 @@ public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Lo
     List<ChecklistItem> findByTripIdOrderBySortOrderAscIdAsc(Long tripId);
 
     Optional<ChecklistItem> findByRid(String rid);
+
+    /** Items assigned to a member — used to re-point the assignee when two members are merged. */
+    List<ChecklistItem> findByAssigneeId(Long assigneeId);
 }

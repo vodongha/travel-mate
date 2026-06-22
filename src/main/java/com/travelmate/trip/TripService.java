@@ -7,7 +7,7 @@ import com.travelmate.trip.dto.AddMemberRequest;
 import com.travelmate.trip.dto.CreateTripRequest;
 import com.travelmate.trip.dto.MemberResponse;
 import com.travelmate.trip.dto.TripResponse;
-import com.travelmate.trip.dto.UpdateMemberRoleRequest;
+import com.travelmate.trip.dto.UpdateMemberRequest;
 import com.travelmate.trip.dto.UpdateTripRequest;
 import com.travelmate.user.User;
 import com.travelmate.user.UserRepository;
@@ -25,6 +25,7 @@ public class TripService {
     private final TripMemberRepository tripMemberRepository;
     private final TripAccessGuard guard;
     private final UserRepository userRepository;
+    private final MemberMergeService memberMergeService;
 
     private final com.travelmate.notification.NotificationService notificationService;
 
@@ -32,11 +33,13 @@ public class TripService {
                        TripMemberRepository tripMemberRepository,
                        TripAccessGuard guard,
                        UserRepository userRepository,
+                       MemberMergeService memberMergeService,
                        com.travelmate.notification.NotificationService notificationService) {
         this.tripRepository = tripRepository;
         this.tripMemberRepository = tripMemberRepository;
         this.guard = guard;
         this.userRepository = userRepository;
+        this.memberMergeService = memberMergeService;
         this.notificationService = notificationService;
     }
 
@@ -151,21 +154,41 @@ public class TripService {
         member.setTripId(ctx.trip().getId());
         member.setUserId(null); // ghost
         member.setDisplayName(request.displayName().trim());
+        member.setEmail(normalizeEmail(request.email())); // lets a later invite auto-merge this ghost
         member.setRole(request.role() != null ? request.role() : MemberRole.VIEWER);
         return MemberResponse.from(tripMemberRepository.save(member));
     }
 
     @Transactional
-    public MemberResponse updateMemberRole(Long userId, String tripRid, String memberRid,
-                                           UpdateMemberRoleRequest request) {
+    public MemberResponse updateMember(Long userId, String tripRid, String memberRid,
+                                       UpdateMemberRequest request) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.OWNER);
         TripMember member = loadMemberInTrip(memberRid, ctx.trip().getId());
-        // The trip owner can't be demoted (keeps every trip with at least one owner).
-        if (isTripOwner(member, ctx.trip()) && request.role() != MemberRole.OWNER) {
-            throw new ApiException(ErrorCode.FORBIDDEN, "The trip owner's role cannot be changed.");
+        if (request.role() != null) {
+            // The trip owner can't be demoted (keeps every trip with at least one owner).
+            if (isTripOwner(member, ctx.trip()) && request.role() != MemberRole.OWNER) {
+                throw new ApiException(ErrorCode.FORBIDDEN, "The trip owner's role cannot be changed.");
+            }
+            member.setRole(request.role());
         }
-        member.setRole(request.role());
+        // Name/email are editable only for a ghost — a real member's identity comes from their account.
+        if (member.isGhost()) {
+            if (request.displayName() != null && !request.displayName().isBlank()) {
+                member.setDisplayName(request.displayName().trim());
+            }
+            if (request.email() != null) {
+                member.setEmail(normalizeEmail(request.email()));
+            }
+        }
         return MemberResponse.from(member);
+    }
+
+    private static String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        String trimmed = email.trim();
+        return trimmed.isEmpty() ? null : trimmed.toLowerCase();
     }
 
     @Transactional
@@ -176,6 +199,27 @@ public class TripService {
             throw new ApiException(ErrorCode.FORBIDDEN, "The trip owner cannot be removed.");
         }
         member.setDeleted(true);
+    }
+
+    /**
+     * Merge {@code sourceRid} (typically a ghost) into {@code targetRid}: move every money / ticket /
+     * checklist reference onto the target, then soft-delete the source. OWNER only. The trip owner
+     * cannot be the source (it must always survive).
+     */
+    @Transactional
+    public MemberResponse mergeMember(Long userId, String tripRid, String sourceRid, String targetRid) {
+        TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.OWNER);
+        TripMember source = loadMemberInTrip(sourceRid, ctx.trip().getId());
+        TripMember target = loadMemberInTrip(targetRid, ctx.trip().getId());
+        if (source.getId().equals(target.getId())) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, "Cannot merge a member into itself.");
+        }
+        if (isTripOwner(source, ctx.trip())) {
+            throw new ApiException(ErrorCode.FORBIDDEN, "The trip owner cannot be merged away.");
+        }
+        memberMergeService.repoint(source.getId(), target.getId());
+        source.setDeleted(true);
+        return MemberResponse.from(target, target.getId().equals(ctx.membership().getId()));
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────

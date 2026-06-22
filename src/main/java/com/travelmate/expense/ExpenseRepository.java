@@ -17,6 +17,9 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     Optional<Expense> findByRid(String rid);
 
+    /** Expenses paid by a member — used to re-point the payer when two members are merged. */
+    List<Expense> findByPayerId(Long payerId);
+
     @Query("SELECT COALESCE(SUM(e.amountBase), 0) FROM Expense e "
             + "WHERE e.tripId = :tripId AND e.paidFromFund = true")
     BigDecimal sumFundPaidAmountBaseByTrip(@Param("tripId") Long tripId);
