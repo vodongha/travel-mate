@@ -50,7 +50,7 @@ class DashboardReportIT extends AbstractIntegrationTest {
 
         // an upcoming event
         post("/api/v1/trips/" + tripRid + "/events",
-                Map.of("title", "Check-in", "eventType", "HOTEL", "startTime", "2099-01-01T06:00:00Z"), token);
+                Map.of("title", "Check-in", "eventType", "ACCOMMODATION", "startTime", "2099-01-01T06:00:00Z"), token);
 
         // ── dashboard ──
         JsonNode dash = data(get("/api/v1/trips/" + tripRid + "/dashboard", token));

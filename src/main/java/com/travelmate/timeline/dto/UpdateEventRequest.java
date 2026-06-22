@@ -1,6 +1,6 @@
 package com.travelmate.timeline.dto;
 
-import com.travelmate.timeline.EventType;
+import com.travelmate.common.entity.Category;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
@@ -11,7 +11,7 @@ import java.time.Instant;
  */
 public record UpdateEventRequest(
         @Size(max = 200) String title,
-        EventType eventType,
+        Category eventType,
         Instant startTime,
         Instant endTime,
         @Size(max = 36) String placeRid,

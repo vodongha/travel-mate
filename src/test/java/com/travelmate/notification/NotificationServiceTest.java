@@ -2,7 +2,7 @@ package com.travelmate.notification;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelmate.timeline.Event;
-import com.travelmate.timeline.EventType;
+import com.travelmate.common.entity.Category;
 import com.travelmate.trip.Trip;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,7 +84,7 @@ class NotificationServiceTest {
 
     @Test
     void rescheduleEvent_hotel_enqueuesReminderAndCheckin() {
-        Event event = event(EventType.HOTEL, Instant.now().plus(2, ChronoUnit.DAYS));
+        Event event = event(Category.ACCOMMODATION, Instant.now().plus(2, ChronoUnit.DAYS));
         service.rescheduleEvent(trip(LocalDate.now().plusDays(2), null), event);
 
         verify(repository).cancelPendingForEvent(99L);
@@ -95,7 +95,7 @@ class NotificationServiceTest {
 
     @Test
     void rescheduleEvent_nonHotelFuture_enqueuesReminderOnly() {
-        Event event = event(EventType.FOOD, Instant.now().plus(2, ChronoUnit.DAYS));
+        Event event = event(Category.FOOD, Instant.now().plus(2, ChronoUnit.DAYS));
         service.rescheduleEvent(trip(LocalDate.now().plusDays(2), null), event);
 
         List<NotificationType> types = captureSaved().stream().map(ScheduledNotification::getType).toList();
@@ -104,14 +104,14 @@ class NotificationServiceTest {
 
     @Test
     void rescheduleEvent_pastEvent_enqueuesNothing() {
-        Event event = event(EventType.FOOD, Instant.now().minus(2, ChronoUnit.DAYS));
+        Event event = event(Category.FOOD, Instant.now().minus(2, ChronoUnit.DAYS));
         service.rescheduleEvent(trip(LocalDate.now(), null), event);
 
         verify(repository).cancelPendingForEvent(anyLong());
         verify(repository, never()).save(any());
     }
 
-    private static Event event(EventType type, Instant start) {
+    private static Event event(Category type, Instant start) {
         Event e = new Event();
         ReflectionTestUtils.setField(e, "id", 99L);
         ReflectionTestUtils.setField(e, "rid", "event-rid");

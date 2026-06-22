@@ -1,6 +1,7 @@
 package com.travelmate.place;
 
 import com.travelmate.common.entity.BaseEntity;
+import com.travelmate.common.entity.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -36,7 +37,7 @@ public class Place extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "PLACE_TYPE", nullable = false, length = 20)
-    private PlaceType placeType = PlaceType.OTHER;
+    private Category placeType = Category.OTHER;
 
     public Long getTripId() {
         return tripId;
@@ -78,11 +79,11 @@ public class Place extends BaseEntity {
         this.longitude = longitude;
     }
 
-    public PlaceType getPlaceType() {
+    public Category getPlaceType() {
         return placeType;
     }
 
-    public void setPlaceType(PlaceType placeType) {
+    public void setPlaceType(Category placeType) {
         this.placeType = placeType;
     }
 }
