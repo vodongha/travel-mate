@@ -102,10 +102,15 @@ public class EventService {
             event.setEndTime(request.endTime());
         }
         if (request.placeRid() != null) {
+            final Long oldPlaceId = event.getPlaceId();
             // Blank clears the link; a value re-points it (validated against the trip).
             event.setPlaceId(request.placeRid().isBlank()
                     ? null
                     : placeService.resolvePlaceId(request.placeRid(), trip.getId()));
+            // If the event let go of a place, drop that place when nothing else uses it.
+            if (oldPlaceId != null && !oldPlaceId.equals(event.getPlaceId())) {
+                pruneOrphanPlace(oldPlaceId, event.getId());
+            }
         }
         validateTimes(event.getStartTime(), event.getEndTime());
         notificationService.rescheduleEvent(trip, event);
@@ -116,11 +121,28 @@ public class EventService {
     public void delete(Long userId, String tripRid, String eventRid) {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.EDITOR).trip();
         Event event = loadInTrip(eventRid, trip.getId());
+        final Long placeId = event.getPlaceId();
         event.setDeleted(true);
         notificationService.cancelEvent(event.getId());
+        // Deleting the event frees its place; drop the place when nothing else uses it.
+        pruneOrphanPlace(placeId, event.getId());
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Soft-delete {@code placeId} when no live event other than {@code keepEventId} still references
+     * it — so a place added via an event's location picker disappears from the Places tab once the
+     * last event using it lets it go. Places still used elsewhere are kept. No-op for a null id.
+     */
+    private void pruneOrphanPlace(Long placeId, Long keepEventId) {
+        if (placeId == null) {
+            return;
+        }
+        if (!eventRepository.existsByPlaceIdAndIdNot(placeId, keepEventId)) {
+            placeRepository.findById(placeId).ifPresent(p -> p.setDeleted(true));
+        }
+    }
 
     private Event loadInTrip(String eventRid, Long tripId) {
         Event event = eventRepository.findByRid(eventRid)
