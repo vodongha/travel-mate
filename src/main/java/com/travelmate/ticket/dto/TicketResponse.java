@@ -1,7 +1,7 @@
 package com.travelmate.ticket.dto;
 
+import com.travelmate.common.entity.Category;
 import com.travelmate.ticket.Ticket;
-import com.travelmate.ticket.TicketType;
 
 public record TicketResponse(
         String rid,
@@ -11,7 +11,7 @@ public record TicketResponse(
         // True for a group ticket (no owner, shared by the whole trip); memberRid/memberName are null.
         boolean shared,
         String title,
-        TicketType ticketType,
+        Category ticketType,
         String qrData,
         String seat,
         String note) {

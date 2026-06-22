@@ -1,6 +1,6 @@
 package com.travelmate.ticket.dto;
 
-import com.travelmate.ticket.TicketType;
+import com.travelmate.common.entity.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -11,7 +11,7 @@ public record CreateTicketRequest(
         // is ignored. Creating one needs EDITOR, like assigning to another member.
         Boolean shared,
         @NotBlank @Size(max = 200) String title,
-        TicketType ticketType,
+        Category ticketType,
         @NotBlank @Size(max = 4000) String qrData,
         @Size(max = 50) String seat,
         @Size(max = 2000) String note) {

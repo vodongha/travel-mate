@@ -1,6 +1,7 @@
 package com.travelmate.timeline;
 
 import com.travelmate.common.entity.BaseEntity;
+import com.travelmate.common.entity.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,7 +25,7 @@ public class Event extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "EVENT_TYPE", nullable = false, length = 20)
-    private EventType eventType = EventType.OTHER;
+    private Category eventType = Category.OTHER;
 
     @Column(name = "START_TIME", nullable = false)
     private Instant startTime;
@@ -54,11 +55,11 @@ public class Event extends BaseEntity {
         this.title = title;
     }
 
-    public EventType getEventType() {
+    public Category getEventType() {
         return eventType;
     }
 
-    public void setEventType(EventType eventType) {
+    public void setEventType(Category eventType) {
         this.eventType = eventType;
     }
 

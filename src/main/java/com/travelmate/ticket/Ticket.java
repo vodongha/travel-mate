@@ -1,6 +1,7 @@
 package com.travelmate.ticket;
 
 import com.travelmate.common.entity.BaseEntity;
+import com.travelmate.common.entity.Category;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,7 +33,7 @@ public class Ticket extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "TICKET_TYPE", nullable = false, length = 20)
-    private TicketType ticketType = TicketType.OTHER;
+    private Category ticketType = Category.OTHER;
 
     @Column(name = "QR_DATA", nullable = false, length = 4000)
     private String qrData;
@@ -67,11 +68,11 @@ public class Ticket extends BaseEntity {
         this.title = title;
     }
 
-    public TicketType getTicketType() {
+    public Category getTicketType() {
         return ticketType;
     }
 
-    public void setTicketType(TicketType ticketType) {
+    public void setTicketType(Category ticketType) {
         this.ticketType = ticketType;
     }
 
