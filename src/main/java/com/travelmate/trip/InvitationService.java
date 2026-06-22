@@ -117,10 +117,15 @@ public class InvitationService {
     }
 
     private Optional<TripMember> findGhostToMerge(Long tripId, User user) {
+        final String email = user.getEmail();
+        if (email == null || email.isBlank()) {
+            return Optional.empty();
+        }
         return tripMemberRepository.findByTripId(tripId).stream()
                 .filter(TripMember::isGhost)
-                .filter(m -> m.getDisplayName() != null
-                        && m.getDisplayName().equalsIgnoreCase(user.getEmail()))
+                // Prefer the ghost's own email; fall back to a display name that was set to the email.
+                .filter(m -> email.equalsIgnoreCase(m.getEmail())
+                        || email.equalsIgnoreCase(m.getDisplayName()))
                 .findFirst();
     }
 

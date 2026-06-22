@@ -8,6 +8,7 @@ import java.time.Instant;
 public record MemberResponse(
         String rid,
         String displayName,
+        String email,
         MemberRole role,
         boolean ghost,
         boolean mine,
@@ -22,6 +23,7 @@ public record MemberResponse(
         return new MemberResponse(
                 member.getRid(),
                 member.getDisplayName(),
+                member.getEmail(),
                 member.getRole(),
                 member.isGhost(),
                 mine,
