@@ -1,4 +1,4 @@
-# TravelMate — CLAUDE.md
+# Travel Mate — CLAUDE.md
 
 Guidance for Claude (and humans) working in this repo.
 
