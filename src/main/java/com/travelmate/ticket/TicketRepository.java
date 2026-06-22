@@ -11,5 +11,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByTripIdAndMemberIdOrderByTicketTypeAscIdAsc(Long tripId, Long memberId);
 
+    /** Group tickets (no owner) — shared by the whole trip, surfaced in everyone's "mine" list. */
+    List<Ticket> findByTripIdAndMemberIdIsNullOrderByTicketTypeAscIdAsc(Long tripId);
+
     Optional<Ticket> findByRid(String rid);
 }

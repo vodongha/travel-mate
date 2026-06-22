@@ -66,6 +66,43 @@ class TicketIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void groupTicket_hasNoOwner_visibleToAll() {
+        String owner = registerToken("tk-owner4@example.com");
+        String tripRid = createTrip(owner, "Danang");
+
+        // shared=true → a group ticket: no owner, not "mine", and it carries the QR.
+        JsonNode g = post("/api/v1/trips/" + tripRid + "/tickets", Map.of(
+                "shared", true, "title", "Boat charter", "ticketType", "ACCOMMODATION",
+                "qrData", "GROUP-QR"), owner).getBody().get("data");
+        assertThat(g.get("shared").asBoolean()).isTrue();
+        assertThat(g.get("mine").asBoolean()).isFalse();
+        assertThat(g.get("memberRid").isNull()).isTrue();
+        assertThat(g.get("qrData").asText()).isEqualTo("GROUP-QR");
+
+        // It shows in the trip-wide list, and in everyone's /mine (a shared pass is relevant to all).
+        assertThat(get("/api/v1/trips/" + tripRid + "/tickets", owner).getBody().get("data").size())
+                .isEqualTo(1);
+        JsonNode mine = get("/api/v1/trips/" + tripRid + "/tickets/mine", owner).getBody().get("data");
+        assertThat(mine.size()).isEqualTo(1);
+        assertThat(mine.get(0).get("shared").asBoolean()).isTrue();
+    }
+
+    @Test
+    void viewer_cannotCreateGroupTicket() {
+        String owner = registerToken("tk-owner5@example.com");
+        String tripRid = createTrip(owner, "Sapa");
+        String inviteToken = post("/api/v1/trips/" + tripRid + "/invitations",
+                Map.of("role", "VIEWER"), owner).getBody().get("data").get("token").asText();
+        String viewer = registerToken("tk-viewer5@example.com");
+        post("/api/v1/invitations/" + inviteToken + "/accept", Map.of(), viewer);
+
+        // A group ticket belongs to no one → creating it is a manage-others action (EDITOR only).
+        assertThat(post("/api/v1/trips/" + tripRid + "/tickets",
+                Map.of("shared", true, "title", "x", "qrData", "y"), viewer).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void viewer_managesOwnButNotOthers() {
         String owner = registerToken("tk-owner3@example.com");
         String tripRid = createTrip(owner, "Hue");
