@@ -5,6 +5,8 @@ import com.travelmate.common.exception.ErrorCode;
 import com.travelmate.place.dto.CreatePlaceRequest;
 import com.travelmate.place.dto.PlaceResponse;
 import com.travelmate.place.dto.UpdatePlaceRequest;
+import com.travelmate.timeline.Event;
+import com.travelmate.timeline.EventRepository;
 import com.travelmate.trip.MemberRole;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripAccessGuard;
@@ -18,10 +20,13 @@ import java.util.List;
 public class PlaceService {
 
     private final PlaceRepository placeRepository;
+    private final EventRepository eventRepository;
     private final TripAccessGuard guard;
 
-    public PlaceService(PlaceRepository placeRepository, TripAccessGuard guard) {
+    public PlaceService(PlaceRepository placeRepository, EventRepository eventRepository,
+                        TripAccessGuard guard) {
         this.placeRepository = placeRepository;
+        this.eventRepository = eventRepository;
         this.guard = guard;
     }
 
@@ -79,7 +84,12 @@ public class PlaceService {
     @Transactional
     public void delete(Long userId, String tripRid, String placeRid) {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.EDITOR).trip();
-        loadInTrip(placeRid, trip.getId()).setDeleted(true);
+        Place place = loadInTrip(placeRid, trip.getId());
+        place.setDeleted(true);
+        // Deleting a place unlinks it from the itinerary: events keep existing, just lose the location.
+        for (Event e : eventRepository.findByPlaceId(place.getId())) {
+            e.setPlaceId(null);
+        }
     }
 
     /**
