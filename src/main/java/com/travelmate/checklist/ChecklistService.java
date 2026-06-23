@@ -75,7 +75,7 @@ public class ChecklistService {
         ChecklistItem item = loadInTrip(itemRid, trip.getId());
         boolean structural = request.title() != null
                 || request.assigneeRid() != null || request.sortOrder() != null;
-        if (structural && !ctx.membership().getRole().satisfies(MemberRole.EDITOR)) {
+        if (structural && !ctx.effectiveRole().satisfies(MemberRole.EDITOR)) {
             throw new ApiException(ErrorCode.FORBIDDEN,
                     "Editing a checklist item requires the EDITOR role.");
         }

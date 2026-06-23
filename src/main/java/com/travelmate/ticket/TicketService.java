@@ -163,7 +163,7 @@ public class TicketService {
     /** Manage your own ticket at any role; manage another member's (or assign to them) needs EDITOR. */
     private void requireManagePermission(TripContext ctx, Long ticketMemberId) {
         boolean mine = ctx.membership().getId().equals(ticketMemberId);
-        if (!mine && !ctx.membership().getRole().satisfies(MemberRole.EDITOR)) {
+        if (!mine && !ctx.effectiveRole().satisfies(MemberRole.EDITOR)) {
             throw new ApiException(ErrorCode.FORBIDDEN,
                     "Managing another member's ticket requires the EDITOR role.");
         }

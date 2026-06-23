@@ -86,6 +86,35 @@ class MemberMergeIT extends AbstractIntegrationTest {
         assertThat(members).anyMatch(m -> m.get("mine").asBoolean() && !m.get("ghost").asBoolean());
     }
 
+    @Test
+    void register_autoLinksGhostWithMatchingEmail() {
+        String owner = registerToken("mm-owner7@example.com");
+        String tripRid = createTrip(owner, "Ninh Binh");
+        addGhost(tripRid, owner, "Minh", "mm-signup7@example.com");
+
+        // Brand-new account whose email matches the ghost → auto-joined, no invite needed.
+        String joiner = registerToken("mm-signup7@example.com");
+        JsonNode members = get("/api/v1/trips/" + tripRid + "/members", joiner).getBody().get("data");
+        assertThat(members.size()).isEqualTo(2); // ghost claimed in place, not duplicated
+        assertThat(members).anyMatch(m -> m.get("mine").asBoolean() && !m.get("ghost").asBoolean());
+    }
+
+    @Test
+    void addGhostWithRealAccountEmail_linksThatAccount() {
+        String owner = registerToken("mm-owner8@example.com");
+        String real = registerToken("mm-real8@example.com"); // already has an account
+        String tripRid = createTrip(owner, "Cat Ba");
+
+        // Adding a "ghost" with an existing account's email links the real account instead.
+        JsonNode added = post("/api/v1/trips/" + tripRid + "/members",
+                Map.of("displayName", "Real", "email", "mm-real8@example.com", "role", "EDITOR"),
+                owner).getBody().get("data");
+        assertThat(added.get("ghost").asBoolean()).isFalse();
+        // The real account can now read the trip (it was auto-joined).
+        assertThat(get("/api/v1/trips/" + tripRid + "/members", real).getStatusCode().value())
+                .isEqualTo(200);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private String registerToken(String email) {
