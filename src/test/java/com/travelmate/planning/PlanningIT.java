@@ -132,12 +132,13 @@ class PlanningIT extends AbstractIntegrationTest {
         JsonNode mine = get("/api/v1/trips/" + tripRid + "/tickets/mine", owner).getBody().get("data");
         assertThat(mine.get(0).get("itineraryRid").asText()).isEqualTo(transportRid);
 
-        // a hotel stay has no own QR field anymore
+        // a hotel stay holds no QR or booking code anymore — those live on its ticket
         JsonNode hotel = post("/api/v1/trips/" + tripRid + "/accommodations",
-                Map.of("name", "Hotel Namba", "bookingCode", "BK-9981",
+                Map.of("name", "Hotel Namba",
                         "checkinTime", "2026-09-10T06:00:00Z", "checkoutTime", "2026-09-12T03:00:00Z"),
                 owner).getBody().get("data");
         assertThat(hotel.has("qrData")).isFalse();
+        assertThat(hotel.has("bookingCode")).isFalse();
         assertThat(hotel.has("id")).isFalse();
     }
 

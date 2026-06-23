@@ -7,7 +7,6 @@ import java.time.Instant;
 
 public record CreateAccommodationRequest(
         @NotBlank @Size(max = 200) String name,
-        @Size(max = 100) String bookingCode,
         @Size(max = 500) String address,
         Instant checkinTime,
         Instant checkoutTime,
