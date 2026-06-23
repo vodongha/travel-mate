@@ -18,9 +18,6 @@ public class ChecklistItem extends BaseEntity {
     @Column(name = "TITLE", nullable = false, length = 300)
     private String title;
 
-    @Column(name = "COMPLETED", nullable = false)
-    private boolean completed = false;
-
     @Column(name = "ASSIGNEE_ID")
     private Long assigneeId;
 
@@ -41,14 +38,6 @@ public class ChecklistItem extends BaseEntity {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public boolean isCompleted() {
-        return completed;
-    }
-
-    public void setCompleted(boolean completed) {
-        this.completed = completed;
     }
 
     public Long getAssigneeId() {

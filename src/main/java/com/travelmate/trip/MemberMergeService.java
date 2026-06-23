@@ -1,5 +1,7 @@
 package com.travelmate.trip;
 
+import com.travelmate.checklist.ChecklistCompletion;
+import com.travelmate.checklist.ChecklistCompletionRepository;
 import com.travelmate.checklist.ChecklistItem;
 import com.travelmate.checklist.ChecklistItemRepository;
 import com.travelmate.expense.Expense;
@@ -30,17 +32,20 @@ public class MemberMergeService {
     private final FundContributionRepository fundContributionRepository;
     private final TicketMemberRepository ticketMemberRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final ChecklistCompletionRepository checklistCompletionRepository;
 
     public MemberMergeService(ExpenseRepository expenseRepository,
                               ExpenseShareRepository shareRepository,
                               FundContributionRepository fundContributionRepository,
                               TicketMemberRepository ticketMemberRepository,
-                              ChecklistItemRepository checklistItemRepository) {
+                              ChecklistItemRepository checklistItemRepository,
+                              ChecklistCompletionRepository checklistCompletionRepository) {
         this.expenseRepository = expenseRepository;
         this.shareRepository = shareRepository;
         this.fundContributionRepository = fundContributionRepository;
         this.ticketMemberRepository = ticketMemberRepository;
         this.checklistItemRepository = checklistItemRepository;
+        this.checklistCompletionRepository = checklistCompletionRepository;
     }
 
     /** Move all of {@code sourceId}'s expenses, shares, contributions, tickets and checklist
@@ -89,6 +94,21 @@ public class MemberMergeService {
 
         for (ChecklistItem i : checklistItemRepository.findByAssigneeId(sourceId)) {
             i.setAssigneeId(targetId);
+        }
+
+        // Checklist completions: move the source's ticks to the target, skipping items the target
+        // already ticked (the join is unique per item+member).
+        Set<Long> targetDoneItems = new HashSet<>();
+        for (ChecklistCompletion c : checklistCompletionRepository.findByMemberId(targetId)) {
+            targetDoneItems.add(c.getItemId());
+        }
+        for (ChecklistCompletion c : checklistCompletionRepository.findByMemberId(sourceId)) {
+            if (targetDoneItems.contains(c.getItemId())) {
+                checklistCompletionRepository.delete(c);
+            } else {
+                c.setMemberId(targetId);
+                targetDoneItems.add(c.getItemId());
+            }
         }
     }
 }
