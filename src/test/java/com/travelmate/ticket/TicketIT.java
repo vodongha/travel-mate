@@ -53,9 +53,9 @@ class TicketIT extends AbstractIntegrationTest {
         post("/api/v1/trips/" + tripRid + "/tickets",
                 Map.of("title", "My pass", "qrData", "OWNER-QR"), owner);
         JsonNode lanTicket = post("/api/v1/trips/" + tripRid + "/tickets", Map.of(
-                "memberRid", lan, "title", "Lan's pass", "ticketType", "SIGHTSEEING",
+                "memberRids", java.util.List.of(lan), "title", "Lan's pass", "ticketType", "SIGHTSEEING",
                 "qrData", "LAN-QR"), owner).getBody().get("data");
-        assertThat(lanTicket.get("memberRid").asText()).isEqualTo(lan);
+        assertThat(lanTicket.get("memberRids").get(0).asText()).isEqualTo(lan);
         assertThat(lanTicket.get("mine").asBoolean()).isFalse();
 
         assertThat(get("/api/v1/trips/" + tripRid + "/tickets", owner).getBody().get("data").size())
@@ -75,8 +75,8 @@ class TicketIT extends AbstractIntegrationTest {
                 "shared", true, "title", "Boat charter", "ticketType", "ACCOMMODATION",
                 "qrData", "GROUP-QR"), owner).getBody().get("data");
         assertThat(g.get("shared").asBoolean()).isTrue();
-        assertThat(g.get("mine").asBoolean()).isFalse();
-        assertThat(g.get("memberRid").isNull()).isTrue();
+        assertThat(g.get("memberRids").size()).isZero();
+        assertThat(g.get("mine").asBoolean()).isTrue(); // a group pass is "mine" for everyone
         assertThat(g.get("qrData").asText()).isEqualTo("GROUP-QR");
 
         // It shows in the trip-wide list, and in everyone's /mine (a shared pass is relevant to all).
@@ -85,6 +85,21 @@ class TicketIT extends AbstractIntegrationTest {
         JsonNode mine = get("/api/v1/trips/" + tripRid + "/tickets/mine", owner).getBody().get("data");
         assertThat(mine.size()).isEqualTo(1);
         assertThat(mine.get(0).get("shared").asBoolean()).isTrue();
+    }
+
+    @Test
+    void ticketCanCoverMultipleMembers() {
+        String owner = registerToken("tk-owner6@example.com");
+        String tripRid = createTrip(owner, "Hanoi");
+        String ownerMember = ownerMemberRid(tripRid, owner);
+        String lan = addGhost(tripRid, owner, "Lan");
+
+        JsonNode t = post("/api/v1/trips/" + tripRid + "/tickets", Map.of(
+                "memberRids", java.util.List.of(ownerMember, lan), "title", "Family room",
+                "ticketType", "ACCOMMODATION", "qrData", "ROOM-QR"), owner).getBody().get("data");
+        assertThat(t.get("memberRids").size()).isEqualTo(2);
+        assertThat(t.get("shared").asBoolean()).isFalse();
+        assertThat(t.get("mine").asBoolean()).isTrue(); // the owner is one of the two
     }
 
     @Test
@@ -119,7 +134,8 @@ class TicketIT extends AbstractIntegrationTest {
                 .isEqualTo(HttpStatus.CREATED);
         // but not assign one to another member (the owner) → 403
         assertThat(post("/api/v1/trips/" + tripRid + "/tickets",
-                Map.of("memberRid", ownerMember, "title", "x", "qrData", "y"), viewer).getStatusCode())
+                Map.of("memberRids", java.util.List.of(ownerMember), "title", "x", "qrData", "y"),
+                viewer).getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);
     }
 

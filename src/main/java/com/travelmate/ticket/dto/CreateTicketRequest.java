@@ -4,11 +4,13 @@ import com.travelmate.common.entity.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.util.List;
+
 public record CreateTicketRequest(
-        // Optional: blank/omitted assigns the ticket to the caller's own membership.
-        @Size(max = 36) String memberRid,
-        // When true the ticket is a group ticket (no owner, shared by the whole trip) and memberRid
-        // is ignored. Creating one needs EDITOR, like assigning to another member.
+        // The members this ticket covers. Empty/omitted (and not shared) → the caller's own ticket.
+        List<String> memberRids,
+        // When true the ticket is a group ticket (no specific members, shared by the whole trip);
+        // memberRids is ignored. Creating one — or assigning to anyone but yourself — needs EDITOR.
         Boolean shared,
         @NotBlank @Size(max = 200) String title,
         Category ticketType,

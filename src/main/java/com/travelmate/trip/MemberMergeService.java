@@ -8,12 +8,14 @@ import com.travelmate.expense.ExpenseShare;
 import com.travelmate.expense.ExpenseShareRepository;
 import com.travelmate.fund.FundContribution;
 import com.travelmate.fund.FundContributionRepository;
-import com.travelmate.ticket.Ticket;
-import com.travelmate.ticket.TicketRepository;
+import com.travelmate.ticket.TicketMember;
+import com.travelmate.ticket.TicketMemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Re-points every member-scoped record from one trip member onto another — the data half of the
@@ -26,18 +28,18 @@ public class MemberMergeService {
     private final ExpenseRepository expenseRepository;
     private final ExpenseShareRepository shareRepository;
     private final FundContributionRepository fundContributionRepository;
-    private final TicketRepository ticketRepository;
+    private final TicketMemberRepository ticketMemberRepository;
     private final ChecklistItemRepository checklistItemRepository;
 
     public MemberMergeService(ExpenseRepository expenseRepository,
                               ExpenseShareRepository shareRepository,
                               FundContributionRepository fundContributionRepository,
-                              TicketRepository ticketRepository,
+                              TicketMemberRepository ticketMemberRepository,
                               ChecklistItemRepository checklistItemRepository) {
         this.expenseRepository = expenseRepository;
         this.shareRepository = shareRepository;
         this.fundContributionRepository = fundContributionRepository;
-        this.ticketRepository = ticketRepository;
+        this.ticketMemberRepository = ticketMemberRepository;
         this.checklistItemRepository = checklistItemRepository;
     }
 
@@ -69,9 +71,22 @@ public class MemberMergeService {
         for (FundContribution c : fundContributionRepository.findByMemberId(sourceId)) {
             c.setMemberId(targetId);
         }
-        for (Ticket t : ticketRepository.findByMemberId(sourceId)) {
-            t.setMemberId(targetId);
+
+        // Ticket memberships: re-point each of the source's rows to the target, but skip (delete) a
+        // row when the target is already on that same ticket (the join is unique per ticket+member).
+        Set<Long> targetTicketIds = new HashSet<>();
+        for (TicketMember tm : ticketMemberRepository.findByMemberId(targetId)) {
+            targetTicketIds.add(tm.getTicketId());
         }
+        for (TicketMember tm : ticketMemberRepository.findByMemberId(sourceId)) {
+            if (targetTicketIds.contains(tm.getTicketId())) {
+                ticketMemberRepository.delete(tm);
+            } else {
+                tm.setMemberId(targetId);
+                targetTicketIds.add(tm.getTicketId());
+            }
+        }
+
         for (ChecklistItem i : checklistItemRepository.findByAssigneeId(sourceId)) {
             i.setAssigneeId(targetId);
         }
