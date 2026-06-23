@@ -17,6 +17,9 @@ public record TicketResponse(
         Category ticketType,
         String qrData,
         String seat,
+        // Carrier/airline + booking (PNR) code — owned by the ticket (see Ticket entity).
+        String provider,
+        String bookingCode,
         // The itinerary item this ticket is for, if any (kind = EVENT | TRANSPORT | ACCOMMODATION).
         String itineraryKind,
         String itineraryRid,
@@ -26,6 +29,7 @@ public record TicketResponse(
                                       boolean mine, String itineraryRid) {
         return new TicketResponse(t.getRid(), memberRids, memberNames, mine, memberRids.isEmpty(),
                 t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(),
+                t.getProvider(), t.getBookingCode(),
                 t.getItineraryKind() == null ? null : t.getItineraryKind().name(), itineraryRid,
                 t.getNote());
     }

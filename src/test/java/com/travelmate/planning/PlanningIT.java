@@ -107,16 +107,24 @@ class PlanningIT extends AbstractIntegrationTest {
         String tripRid = createTrip(owner, "Osaka 2026");
 
         String transportRid = post("/api/v1/trips/" + tripRid + "/transports",
-                Map.of("transportType", "FLIGHT", "provider", "VietnamAirlines",
+                Map.of("transportType", "FLIGHT",
                         "departureTime", "2026-09-09T22:30:00Z", "arrivalTime", "2026-09-10T05:00:00Z"),
                 owner).getBody().get("data").get("rid").asText();
+
+        // the carrier + booking code live on the ticket, not the leg
+        JsonNode leg = get("/api/v1/trips/" + tripRid + "/transports", owner).getBody().get("data").get(0);
+        assertThat(leg.has("provider")).isFalse();
+        assertThat(leg.has("bookingCode")).isFalse();
 
         JsonNode ticket = post("/api/v1/trips/" + tripRid + "/tickets",
                 Map.of("title", "Boarding pass", "ticketType", "TRANSPORT",
                         "qrData", "TKT|VN123|2026-09-09T22:30:00Z", "seat", "12A",
+                        "provider", "VietnamAirlines", "bookingCode", "VN123",
                         "itineraryKind", "TRANSPORT", "itineraryRid", transportRid),
                 owner).getBody().get("data");
         assertThat(ticket.get("seat").asText()).isEqualTo("12A");
+        assertThat(ticket.get("provider").asText()).isEqualTo("VietnamAirlines");
+        assertThat(ticket.get("bookingCode").asText()).isEqualTo("VN123");
         assertThat(ticket.get("itineraryKind").asText()).isEqualTo("TRANSPORT");
         assertThat(ticket.get("itineraryRid").asText()).isEqualTo(transportRid);
 
