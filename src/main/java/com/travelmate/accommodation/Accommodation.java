@@ -23,9 +23,6 @@ public class Accommodation extends BaseEntity {
     @Column(name = "NAME", nullable = false, length = 200)
     private String name;
 
-    @Column(name = "BOOKING_CODE", length = 100)
-    private String bookingCode;
-
     @Column(name = "ADDRESS", length = 500)
     private String address;
 
@@ -52,14 +49,6 @@ public class Accommodation extends BaseEntity {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getBookingCode() {
-        return bookingCode;
-    }
-
-    public void setBookingCode(String bookingCode) {
-        this.bookingCode = bookingCode;
     }
 
     public String getAddress() {
