@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Checklist CRUD (SPEC §7 Module 12). All access goes through {@link TripAccessGuard}. */
@@ -23,20 +24,24 @@ import java.util.stream.Collectors;
 public class ChecklistService {
 
     private final ChecklistItemRepository checklistRepository;
+    private final ChecklistCompletionRepository completionRepository;
     private final TripMemberRepository tripMemberRepository;
     private final TripAccessGuard guard;
 
     public ChecklistService(ChecklistItemRepository checklistRepository,
+                            ChecklistCompletionRepository completionRepository,
                             TripMemberRepository tripMemberRepository,
                             TripAccessGuard guard) {
         this.checklistRepository = checklistRepository;
+        this.completionRepository = completionRepository;
         this.tripMemberRepository = tripMemberRepository;
         this.guard = guard;
     }
 
     @Transactional(readOnly = true)
     public List<ChecklistItemResponse> list(Long userId, String tripRid) {
-        Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER).trip();
+        var ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
+        Trip trip = ctx.trip();
         List<ChecklistItem> items = checklistRepository.findByTripIdOrderBySortOrderAscIdAsc(trip.getId());
 
         // Resolve assignee rids in one query rather than N.
@@ -44,9 +49,14 @@ public class ChecklistService {
                 .findAllById(items.stream().map(ChecklistItem::getAssigneeId).filter(Objects::nonNull).toList())
                 .stream().collect(Collectors.toMap(TripMember::getId, TripMember::getRid));
 
+        // Every member sees every item, but only their OWN completion state (not anyone else's).
+        Set<Long> doneByMe = completionRepository.findByMemberId(ctx.membership().getId()).stream()
+                .map(ChecklistCompletion::getItemId).collect(Collectors.toSet());
+
         return items.stream()
                 .map(i -> ChecklistItemResponse.from(i,
-                        i.getAssigneeId() == null ? null : memberRids.get(i.getAssigneeId())))
+                        i.getAssigneeId() == null ? null : memberRids.get(i.getAssigneeId()),
+                        doneByMe.contains(i.getId())))
                 .toList();
     }
 
@@ -56,13 +66,13 @@ public class ChecklistService {
         ChecklistItem item = new ChecklistItem();
         item.setTripId(trip.getId());
         item.setTitle(request.title().trim());
-        item.setCompleted(Boolean.TRUE.equals(request.completed()));
         item.setAssigneeId(resolveAssigneeId(request.assigneeRid(), trip.getId()));
         if (request.sortOrder() != null) {
             item.setSortOrder(request.sortOrder());
         }
         item = checklistRepository.save(item);
-        return ChecklistItemResponse.from(item, request.assigneeRid());
+        // Completion is per-member and starts unticked for everyone.
+        return ChecklistItemResponse.from(item, request.assigneeRid(), false);
     }
 
     @Transactional
@@ -82,8 +92,9 @@ public class ChecklistService {
         if (request.title() != null) {
             item.setTitle(request.title().trim());
         }
+        // Ticking/unticking only affects the CALLER's own completion row.
         if (request.completed() != null) {
-            item.setCompleted(request.completed());
+            setCompletion(item.getId(), ctx.membership().getId(), request.completed());
         }
         if (request.assigneeRid() != null) {
             item.setAssigneeId(request.assigneeRid().isBlank()
@@ -93,13 +104,27 @@ public class ChecklistService {
         if (request.sortOrder() != null) {
             item.setSortOrder(request.sortOrder());
         }
-        return ChecklistItemResponse.from(item, assigneeRidOf(item.getAssigneeId()));
+        boolean mineDone = completionRepository
+                .findByItemIdAndMemberId(item.getId(), ctx.membership().getId()).isPresent();
+        return ChecklistItemResponse.from(item, assigneeRidOf(item.getAssigneeId()), mineDone);
+    }
+
+    /** Create or remove this member's completion row for an item (idempotent). */
+    private void setCompletion(Long itemId, Long memberId, boolean done) {
+        var existing = completionRepository.findByItemIdAndMemberId(itemId, memberId);
+        if (done && existing.isEmpty()) {
+            completionRepository.save(new ChecklistCompletion(itemId, memberId));
+        } else if (!done) {
+            existing.ifPresent(completionRepository::delete);
+        }
     }
 
     @Transactional
     public void delete(Long userId, String tripRid, String itemRid) {
         Trip trip = guard.requireByTripRid(tripRid, userId, MemberRole.EDITOR).trip();
-        loadInTrip(itemRid, trip.getId()).setDeleted(true);
+        ChecklistItem item = loadInTrip(itemRid, trip.getId());
+        completionRepository.deleteByItemId(item.getId());
+        item.setDeleted(true);
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
