@@ -3,12 +3,15 @@ package com.travelmate.ticket.dto;
 import com.travelmate.common.entity.Category;
 import com.travelmate.ticket.Ticket;
 
+import java.util.List;
+
 public record TicketResponse(
         String rid,
-        String memberRid,
-        String memberName,
+        // The members this ticket covers (may be several). Empty = a group ticket (whole trip).
+        List<String> memberRids,
+        List<String> memberNames,
         boolean mine,
-        // True for a group ticket (no owner, shared by the whole trip); memberRid/memberName are null.
+        // True for a group ticket (no specific members, shared by the whole trip).
         boolean shared,
         String title,
         Category ticketType,
@@ -19,9 +22,9 @@ public record TicketResponse(
         String itineraryRid,
         String note) {
 
-    public static TicketResponse from(Ticket t, String memberRid, String memberName, boolean mine,
-                                      String itineraryRid) {
-        return new TicketResponse(t.getRid(), memberRid, memberName, mine, t.getMemberId() == null,
+    public static TicketResponse from(Ticket t, List<String> memberRids, List<String> memberNames,
+                                      boolean mine, String itineraryRid) {
+        return new TicketResponse(t.getRid(), memberRids, memberNames, mine, memberRids.isEmpty(),
                 t.getTitle(), t.getTicketType(), t.getQrData(), t.getSeat(),
                 t.getItineraryKind() == null ? null : t.getItineraryKind().name(), itineraryRid,
                 t.getNote());
