@@ -18,6 +18,9 @@ public interface TripMemberRepository extends JpaRepository<TripMember, Long> {
 
     boolean existsByTripIdAndUserId(Long tripId, Long userId);
 
+    /** Live ghost memberships (no account yet) carrying this email — claimed when that user signs up. */
+    List<TripMember> findByUserIdIsNullAndEmailIgnoreCase(String email);
+
     /**
      * Members by id <b>including soft-deleted ones</b> — a native query bypasses the
      * {@code @SQLRestriction} (Open decision #1). Settlement/report need a member who left the trip

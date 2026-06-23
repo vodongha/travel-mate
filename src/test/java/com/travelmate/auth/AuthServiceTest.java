@@ -43,8 +43,11 @@ class AuthServiceTest {
         JwtService jwtService = mock(JwtService.class);
         GoogleTokenVerifier googleTokenVerifier = mock(GoogleTokenVerifier.class);
         EmailSender emailSender = mock(EmailSender.class);
-        authService = new AuthService(userRepository, authTokenRepository, passwordEncoder,
-                jwtService, googleTokenVerifier, emailSender, 30, 24, 1, "http://localhost:8000");
+        com.travelmate.trip.TripMemberRepository tripMemberRepository =
+                mock(com.travelmate.trip.TripMemberRepository.class);
+        authService = new AuthService(userRepository, authTokenRepository, tripMemberRepository,
+                passwordEncoder, jwtService, googleTokenVerifier, emailSender, 30, 24, 1,
+                "http://localhost:8000");
     }
 
     @Test

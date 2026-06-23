@@ -5,6 +5,8 @@ import com.travelmate.auth.email.EmailSender;
 import com.travelmate.common.exception.ApiException;
 import com.travelmate.common.exception.ErrorCode;
 import com.travelmate.common.security.JwtService;
+import com.travelmate.trip.TripMember;
+import com.travelmate.trip.TripMemberRepository;
 import com.travelmate.user.AuthProvider;
 import com.travelmate.user.AuthToken;
 import com.travelmate.user.AuthTokenType;
@@ -37,6 +39,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final AuthTokenRepository authTokenRepository;
+    private final TripMemberRepository tripMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final GoogleTokenVerifier googleTokenVerifier;
@@ -49,6 +52,7 @@ public class AuthService {
 
     public AuthService(UserRepository userRepository,
                        AuthTokenRepository authTokenRepository,
+                       TripMemberRepository tripMemberRepository,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        GoogleTokenVerifier googleTokenVerifier,
@@ -59,6 +63,7 @@ public class AuthService {
                        @Value("${app.public-url:http://localhost:8000}") String publicUrl) {
         this.userRepository = userRepository;
         this.authTokenRepository = authTokenRepository;
+        this.tripMemberRepository = tripMemberRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.googleTokenVerifier = googleTokenVerifier;
@@ -82,6 +87,7 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setEmailVerified(false);
         user = userRepository.save(user);
+        claimGhostMemberships(user);
 
         sendEmailVerification(user);
         return buildAuthResponse(user);
@@ -115,7 +121,24 @@ public class AuthService {
             created.setPasswordHash(null);
             return userRepository.save(created);
         });
+        claimGhostMemberships(user);
         return buildAuthResponse(user);
+    }
+
+    /**
+     * Auto-link this account to any ghost member created with the same email: claim the ghost row in
+     * place (keep its id so money/ticket references stay valid) so the user instantly joins those
+     * trips — no manual accept needed. Skips a trip where they are already a real member.
+     */
+    private void claimGhostMemberships(User user) {
+        final Instant now = Instant.now();
+        for (TripMember ghost : tripMemberRepository.findByUserIdIsNullAndEmailIgnoreCase(user.getEmail())) {
+            if (tripMemberRepository.existsByTripIdAndUserId(ghost.getTripId(), user.getId())) {
+                continue; // already a real member of that trip
+            }
+            ghost.setUserId(user.getId());
+            ghost.setJoinedAt(now);
+        }
     }
 
     @Transactional
