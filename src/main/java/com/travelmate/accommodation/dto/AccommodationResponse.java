@@ -7,7 +7,6 @@ import java.time.Instant;
 public record AccommodationResponse(
         String rid,
         String name,
-        String bookingCode,
         String address,
         Instant checkinTime,
         Instant checkoutTime,
@@ -17,7 +16,6 @@ public record AccommodationResponse(
         return new AccommodationResponse(
                 a.getRid(),
                 a.getName(),
-                a.getBookingCode(),
                 a.getAddress(),
                 a.getCheckinTime(),
                 a.getCheckoutTime(),

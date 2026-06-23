@@ -42,7 +42,6 @@ public class AccommodationService {
         Accommodation a = new Accommodation();
         a.setTripId(trip.getId());
         a.setName(request.name().trim());
-        a.setBookingCode(request.bookingCode());
         a.setAddress(request.address());
         a.setCheckinTime(request.checkinTime());
         a.setCheckoutTime(request.checkoutTime());
@@ -63,9 +62,6 @@ public class AccommodationService {
         Accommodation a = loadInTrip(accommodationRid, trip.getId());
         if (request.name() != null) {
             a.setName(request.name().trim());
-        }
-        if (request.bookingCode() != null) {
-            a.setBookingCode(blankToNull(request.bookingCode()));
         }
         if (request.address() != null) {
             a.setAddress(blankToNull(request.address()));
