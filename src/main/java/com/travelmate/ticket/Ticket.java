@@ -38,6 +38,14 @@ public class Ticket extends BaseEntity {
     @Column(name = "SEAT", length = 50)
     private String seat;
 
+    // Carrier/airline + booking (PNR) code for this ticket — owned by the ticket, not the leg, so
+    // each passenger on the same flight carries their own. The leg holds only what/where/when.
+    @Column(name = "PROVIDER", length = 150)
+    private String provider;
+
+    @Column(name = "BOOKING_CODE", length = 100)
+    private String bookingCode;
+
     // Optional polymorphic link to the itinerary item this ticket is for (a flight leg, a stay, an
     // event), exactly like an expense's link — so a flight's boarding passes hang off that leg.
     @Enumerated(EnumType.STRING)
@@ -88,6 +96,22 @@ public class Ticket extends BaseEntity {
 
     public void setSeat(String seat) {
         this.seat = seat;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
+    }
+
+    public String getBookingCode() {
+        return bookingCode;
+    }
+
+    public void setBookingCode(String bookingCode) {
+        this.bookingCode = bookingCode;
     }
 
     public ItineraryKind getItineraryKind() {

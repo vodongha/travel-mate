@@ -8,8 +8,6 @@ import java.time.Instant;
 public record TransportResponse(
         String rid,
         TransportType transportType,
-        String provider,
-        String bookingCode,
         String departurePlace,
         String arrivalPlace,
         Instant departureTime,
@@ -20,8 +18,6 @@ public record TransportResponse(
         return new TransportResponse(
                 t.getRid(),
                 t.getTransportType(),
-                t.getProvider(),
-                t.getBookingCode(),
                 t.getDeparturePlace(),
                 t.getArrivalPlace(),
                 t.getDepartureTime(),

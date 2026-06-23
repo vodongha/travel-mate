@@ -11,8 +11,8 @@ import org.hibernate.annotations.SQLRestriction;
 import java.time.Instant;
 
 /**
- * A transport leg (SPEC §7 Module 6). Times are stored UTC. {@code qrData} holds the decoded
- * ticket-QR <em>string</em>, never an image (SPEC §2.7) — the client re-renders the QR from it.
+ * A transport leg (SPEC §7 Module 6). Times are stored UTC. The leg holds only what/where/when; the
+ * carrier, booking code, seat and QR live on the per-passenger {@code Ticket} linked to this leg.
  */
 @Entity
 @Table(name = "TRANSPORTS")
@@ -25,12 +25,6 @@ public class Transport extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "TRANSPORT_TYPE", nullable = false, length = 20)
     private TransportType transportType;
-
-    @Column(name = "PROVIDER", length = 150)
-    private String provider;
-
-    @Column(name = "BOOKING_CODE", length = 100)
-    private String bookingCode;
 
     @Column(name = "DEPARTURE_PLACE", length = 300)
     private String departurePlace;
@@ -61,22 +55,6 @@ public class Transport extends BaseEntity {
 
     public void setTransportType(TransportType transportType) {
         this.transportType = transportType;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider(String provider) {
-        this.provider = provider;
-    }
-
-    public String getBookingCode() {
-        return bookingCode;
-    }
-
-    public void setBookingCode(String bookingCode) {
-        this.bookingCode = bookingCode;
     }
 
     public String getDeparturePlace() {
