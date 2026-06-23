@@ -131,8 +131,9 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
    (`GET /rates`, `POST /rates/refresh`, 12h refresh) — the slice the Flutter app needs.
 10. **M9 — Flutter app (Android + Web) ✅.**
 11. **Shipped ✅:** v1.0.0 live on Fly.io (API + bundled web at one origin); Android `vn.trippo.mate`.
-    Post-launch: unified `Category` taxonomy, polymorphic expense→itinerary link, group tickets,
-    place↔itinerary delete sync (migrations V1–V15).
+    Post-launch: unified `Category` taxonomy, polymorphic expense/ticket→itinerary links,
+    multi-member & group tickets, per-member checklist, member auto-link/merge, place↔itinerary
+    delete sync, read-only after a trip ends (migrations V1–V19).
 
 ---
 

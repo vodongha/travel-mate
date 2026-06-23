@@ -20,21 +20,24 @@ import com.travelmate.trip.TripMemberRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
- * Per-member tickets (a member shows their own ticket QR at the gate). Read is open to any member;
- * a member may manage <b>their own</b> tickets regardless of role, while managing someone else's
- * (or assigning to another member) needs EDITOR — so an organiser can hand out tickets, and an
- * individual can keep their own up to date.
+ * Tickets (a member shows their QR at the gate). A ticket covers one or more members (a shared
+ * booking) via the TICKET_MEMBERS join, or none — a <em>group</em> ticket for the whole trip. You
+ * may manage a ticket that is solely yours at any role; a group ticket, or one covering anyone but
+ * you, needs EDITOR. Once the trip has ended only the owner can change anything (effective role).
  */
 @Service
 public class TicketService {
 
     private final TicketRepository ticketRepository;
+    private final TicketMemberRepository ticketMemberRepository;
     private final TripMemberRepository tripMemberRepository;
     private final EventRepository eventRepository;
     private final TransportRepository transportRepository;
@@ -42,12 +45,14 @@ public class TicketService {
     private final TripAccessGuard guard;
 
     public TicketService(TicketRepository ticketRepository,
+                         TicketMemberRepository ticketMemberRepository,
                          TripMemberRepository tripMemberRepository,
                          EventRepository eventRepository,
                          TransportRepository transportRepository,
                          AccommodationRepository accommodationRepository,
                          TripAccessGuard guard) {
         this.ticketRepository = ticketRepository;
+        this.ticketMemberRepository = ticketMemberRepository;
         this.tripMemberRepository = tripMemberRepository;
         this.eventRepository = eventRepository;
         this.transportRepository = transportRepository;
@@ -58,48 +63,37 @@ public class TicketService {
     @Transactional(readOnly = true)
     public List<TicketResponse> list(Long userId, String tripRid) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
-        Long me = ctx.membership().getId();
-        Map<Long, TripMember> members = memberMap(ctx.trip().getId());
-        ItineraryRids itin = itineraryRids(ctx.trip().getId());
-        return ticketRepository.findByTripIdOrderByTicketTypeAscIdAsc(ctx.trip().getId()).stream()
-                .map(t -> toResponse(t, members, itin, me))
-                .toList();
+        return toResponses(
+                ticketRepository.findByTripIdOrderByTicketTypeAscIdAsc(ctx.trip().getId()),
+                ctx.trip().getId(), ctx.membership().getId());
     }
 
     @Transactional(readOnly = true)
     public List<TicketResponse> listMine(Long userId, String tripRid) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
         Long me = ctx.membership().getId();
-        Map<Long, TripMember> members = memberMap(ctx.trip().getId());
-        // "Mine" = my own tickets plus any group ticket (shared, relevant to everyone at the gate).
-        List<Ticket> mine =
-                ticketRepository.findByTripIdAndMemberIdOrderByTicketTypeAscIdAsc(ctx.trip().getId(), me);
-        List<Ticket> group =
-                ticketRepository.findByTripIdAndMemberIdIsNullOrderByTicketTypeAscIdAsc(ctx.trip().getId());
-        ItineraryRids itin = itineraryRids(ctx.trip().getId());
-        return Stream.concat(mine.stream(), group.stream())
-                .map(t -> toResponse(t, members, itin, me))
+        List<Ticket> all = ticketRepository.findByTripIdOrderByTicketTypeAscIdAsc(ctx.trip().getId());
+        Map<Long, List<Long>> byTicket = memberIdsByTicket(all);
+        // "Mine" = tickets I'm on, plus group tickets (no members — relevant to everyone at the gate).
+        List<Ticket> mine = all.stream()
+                .filter(t -> {
+                    List<Long> ids = byTicket.getOrDefault(t.getId(), List.of());
+                    return ids.isEmpty() || ids.contains(me);
+                })
                 .toList();
+        return toResponses(mine, ctx.trip().getId(), me);
     }
 
     @Transactional
     public TicketResponse create(Long userId, String tripRid, CreateTicketRequest request) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
-        // shared → group ticket (no owner); else no member given → the caller's own (any role);
-        // else the named member. A group/other-member ticket needs the manage-others (EDITOR) check.
-        Long targetMemberId;
-        if (Boolean.TRUE.equals(request.shared())) {
-            targetMemberId = null;
-        } else if (request.memberRid() == null || request.memberRid().isBlank()) {
-            targetMemberId = ctx.membership().getId();
-        } else {
-            targetMemberId = requireMemberId(request.memberRid(), ctx.trip().getId());
-        }
-        requireManagePermission(ctx, targetMemberId);
+        Long me = ctx.membership().getId();
+        Set<Long> memberIds = resolveMemberSet(request.memberRids(),
+                Boolean.TRUE.equals(request.shared()), me, ctx.trip().getId());
+        requireCanAssign(ctx, memberIds);
 
         Ticket ticket = new Ticket();
         ticket.setTripId(ctx.trip().getId());
-        ticket.setMemberId(targetMemberId);
         ticket.setTitle(request.title().trim());
         if (request.ticketType() != null) {
             ticket.setTicketType(request.ticketType());
@@ -109,32 +103,41 @@ public class TicketService {
         ticket.setNote(request.note());
         applyItinerary(ticket, request.itineraryKind(), request.itineraryRid(), ctx.trip().getId());
         ticket = ticketRepository.save(ticket);
-        return toResponse(ticket, memberMap(ctx.trip().getId()),
-                itineraryRids(ctx.trip().getId()), ctx.membership().getId());
+        saveMembers(ticket.getId(), memberIds);
+        return toResponse(ticket, new ArrayList<>(memberIds), memberMap(ctx.trip().getId()),
+                itineraryRids(ctx.trip().getId()), me);
     }
 
     @Transactional
     public TicketResponse update(Long userId, String tripRid, String ticketRid, UpdateTicketRequest request) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
+        Long me = ctx.membership().getId();
         Ticket ticket = loadInTrip(ticketRid, ctx.trip().getId());
-        requireManagePermission(ctx, ticket.getMemberId());
+        List<Long> current = ticketMemberRepository.findByTicketId(ticket.getId()).stream()
+                .map(TicketMember::getMemberId).toList();
+        requireCanManage(ctx, current);
 
+        // Re-assign members if asked (shared → group/empty; else a new explicit set).
+        Set<Long> memberIds = null;
         if (Boolean.TRUE.equals(request.shared())) {
-            requireManagePermission(ctx, null); // converting to a group ticket needs EDITOR
-            ticket.setMemberId(null);
-        } else if (request.memberRid() != null && !request.memberRid().isBlank()) {
-            Long newMemberId = requireMemberId(request.memberRid(), ctx.trip().getId());
-            requireManagePermission(ctx, newMemberId); // reassigning to someone else needs EDITOR
-            ticket.setMemberId(newMemberId);
+            memberIds = new LinkedHashSet<>();
+        } else if (request.memberRids() != null) {
+            memberIds = resolveMemberSet(request.memberRids(), false, me, ctx.trip().getId());
         }
+        if (memberIds != null) {
+            requireCanAssign(ctx, memberIds);
+            ticketMemberRepository.deleteByTicketId(ticket.getId());
+            saveMembers(ticket.getId(), memberIds);
+        }
+
         if (request.title() != null) {
             ticket.setTitle(request.title().trim());
         }
         if (request.ticketType() != null) {
             ticket.setTicketType(request.ticketType());
         }
-        if (request.qrData() != null && !request.qrData().isBlank()) {
-            ticket.setQrData(request.qrData());
+        if (request.qrData() != null) {
+            ticket.setQrData(request.qrData().isBlank() ? null : request.qrData());
         }
         if (request.seat() != null) {
             ticket.setSeat(request.seat().isBlank() ? null : request.seat());
@@ -142,30 +145,70 @@ public class TicketService {
         if (request.note() != null) {
             ticket.setNote(request.note().isBlank() ? null : request.note());
         }
-        // A non-null itineraryRid (re)sets the link; blank clears it; omitted leaves it unchanged.
         if (request.itineraryRid() != null) {
             applyItinerary(ticket, request.itineraryKind(), request.itineraryRid(), ctx.trip().getId());
         }
-        return toResponse(ticket, memberMap(ctx.trip().getId()),
-                itineraryRids(ctx.trip().getId()), ctx.membership().getId());
+        List<Long> finalIds = ticketMemberRepository.findByTicketId(ticket.getId()).stream()
+                .map(TicketMember::getMemberId).toList();
+        return toResponse(ticket, finalIds, memberMap(ctx.trip().getId()),
+                itineraryRids(ctx.trip().getId()), me);
     }
 
     @Transactional
     public void delete(Long userId, String tripRid, String ticketRid) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
         Ticket ticket = loadInTrip(ticketRid, ctx.trip().getId());
-        requireManagePermission(ctx, ticket.getMemberId());
+        List<Long> current = ticketMemberRepository.findByTicketId(ticket.getId()).stream()
+                .map(TicketMember::getMemberId).toList();
+        requireCanManage(ctx, current);
+        ticketMemberRepository.deleteByTicketId(ticket.getId());
         ticket.setDeleted(true);
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    /** Manage your own ticket at any role; manage another member's (or assign to them) needs EDITOR. */
-    private void requireManagePermission(TripContext ctx, Long ticketMemberId) {
-        boolean mine = ctx.membership().getId().equals(ticketMemberId);
-        if (!mine && !ctx.membership().getRole().satisfies(MemberRole.EDITOR)) {
+    /** group (shared) → empty set; else the named members; else the caller alone. Validates trip. */
+    private Set<Long> resolveMemberSet(List<String> memberRids, boolean shared, Long me, Long tripId) {
+        if (shared) {
+            return new LinkedHashSet<>();
+        }
+        Set<Long> ids = new LinkedHashSet<>();
+        if (memberRids == null || memberRids.isEmpty()) {
+            ids.add(me);
+        } else {
+            for (String rid : memberRids) {
+                if (rid != null && !rid.isBlank()) {
+                    ids.add(requireMemberId(rid, tripId));
+                }
+            }
+            if (ids.isEmpty()) {
+                ids.add(me);
+            }
+        }
+        return ids;
+    }
+
+    private void saveMembers(Long ticketId, Set<Long> memberIds) {
+        for (Long id : memberIds) {
+            ticketMemberRepository.save(new TicketMember(ticketId, id));
+        }
+    }
+
+    /** Manage a ticket that's solely yours at any role; a group/other-member ticket needs EDITOR. */
+    private void requireCanManage(TripContext ctx, List<Long> memberIds) {
+        boolean soleOwner = memberIds.size() == 1 && memberIds.contains(ctx.membership().getId());
+        if (!soleOwner && !ctx.effectiveRole().satisfies(MemberRole.EDITOR)) {
             throw new ApiException(ErrorCode.FORBIDDEN,
-                    "Managing another member's ticket requires the EDITOR role.");
+                    "Managing this ticket requires the EDITOR role.");
+        }
+    }
+
+    /** Assigning to exactly yourself is fine at any role; a group ticket or others needs EDITOR. */
+    private void requireCanAssign(TripContext ctx, Set<Long> memberIds) {
+        boolean soleSelf = memberIds.size() == 1 && memberIds.contains(ctx.membership().getId());
+        if (!soleSelf && !ctx.effectiveRole().satisfies(MemberRole.EDITOR)) {
+            throw new ApiException(ErrorCode.FORBIDDEN,
+                    "Assigning a ticket to others or the whole group requires the EDITOR role.");
         }
     }
 
@@ -191,13 +234,38 @@ public class TicketService {
                 .collect(Collectors.toMap(TripMember::getId, m -> m));
     }
 
-    private TicketResponse toResponse(Ticket t, Map<Long, TripMember> members, ItineraryRids itin, Long me) {
-        TripMember m = t.getMemberId() == null ? null : members.get(t.getMemberId());
-        return TicketResponse.from(t,
-                m == null ? null : m.getRid(),
-                m == null ? null : m.getDisplayName(),
-                me != null && me.equals(t.getMemberId()),
-                itin.rid(t.getItineraryKind(), t.getItineraryId()));
+    private Map<Long, List<Long>> memberIdsByTicket(List<Ticket> tickets) {
+        if (tickets.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = tickets.stream().map(Ticket::getId).toList();
+        return ticketMemberRepository.findByTicketIdIn(ids).stream()
+                .collect(Collectors.groupingBy(TicketMember::getTicketId,
+                        Collectors.mapping(TicketMember::getMemberId, Collectors.toList())));
+    }
+
+    private List<TicketResponse> toResponses(List<Ticket> tickets, Long tripId, Long me) {
+        Map<Long, TripMember> members = memberMap(tripId);
+        ItineraryRids itin = itineraryRids(tripId);
+        Map<Long, List<Long>> byTicket = memberIdsByTicket(tickets);
+        return tickets.stream()
+                .map(t -> toResponse(t, byTicket.getOrDefault(t.getId(), List.of()), members, itin, me))
+                .toList();
+    }
+
+    private TicketResponse toResponse(Ticket t, List<Long> memberIds, Map<Long, TripMember> members,
+                                      ItineraryRids itin, Long me) {
+        List<String> rids = new ArrayList<>();
+        List<String> names = new ArrayList<>();
+        for (Long id : memberIds) {
+            TripMember m = members.get(id);
+            if (m != null) {
+                rids.add(m.getRid());
+                names.add(m.getDisplayName());
+            }
+        }
+        boolean mine = memberIds.isEmpty() || (me != null && memberIds.contains(me));
+        return TicketResponse.from(t, rids, names, mine, itin.rid(t.getItineraryKind(), t.getItineraryId()));
     }
 
     private ItineraryRids itineraryRids(Long tripId) {
@@ -225,10 +293,7 @@ public class TicketService {
         }
     }
 
-    /**
-     * Set (or clear) a ticket's polymorphic itinerary link — a blank rid clears it; otherwise the
-     * (kind, rid) target is validated to belong to this trip before its id is stored.
-     */
+    /** Set (or clear) a ticket's polymorphic itinerary link; blank rid clears it. */
     private void applyItinerary(Ticket ticket, String kindStr, String rid, Long tripId) {
         if (rid == null || rid.isBlank()) {
             ticket.setItineraryKind(null);

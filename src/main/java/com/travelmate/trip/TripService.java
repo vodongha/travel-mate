@@ -84,14 +84,15 @@ public class TripService {
     @Transactional(readOnly = true)
     public List<TripResponse> listMine(Long userId) {
         return tripRepository.findTripsForUser(userId).stream()
-                .map(trip -> TripResponse.from(trip, roleOf(trip.getId(), userId)))
+                .map(trip -> TripResponse.from(trip,
+                        TripAccessGuard.effectiveRole(trip, roleOf(trip.getId(), userId))))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public TripResponse get(Long userId, String tripRid) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.VIEWER);
-        return TripResponse.from(ctx.trip(), ctx.membership().getRole());
+        return TripResponse.from(ctx.trip(), ctx.effectiveRole());
     }
 
     @Transactional
@@ -127,7 +128,7 @@ public class TripService {
         }
         validateDates(trip.getStartDate(), trip.getEndDate());
         notificationService.rescheduleTrip(trip);
-        return TripResponse.from(trip, ctx.membership().getRole());
+        return TripResponse.from(trip, ctx.effectiveRole());
     }
 
     @Transactional
@@ -150,12 +151,35 @@ public class TripService {
     @Transactional
     public MemberResponse addGhostMember(Long userId, String tripRid, AddMemberRequest request) {
         TripContext ctx = guard.requireByTripRid(tripRid, userId, MemberRole.OWNER);
+        final String email = normalizeEmail(request.email());
+        final MemberRole role = request.role() != null ? request.role() : MemberRole.VIEWER;
+
+        // If the email already belongs to a real account, link that account directly instead of
+        // creating a duplicate ghost — one email = one person (auto-joins them to the trip).
+        if (email != null) {
+            User existing = userRepository.findByEmail(email).orElse(null);
+            if (existing != null) {
+                if (tripMemberRepository.existsByTripIdAndUserId(ctx.trip().getId(), existing.getId())) {
+                    throw new ApiException(ErrorCode.VALIDATION_FAILED,
+                            "This person is already a member of the trip.");
+                }
+                TripMember real = new TripMember();
+                real.setTripId(ctx.trip().getId());
+                real.setUserId(existing.getId());
+                real.setDisplayName(request.displayName().trim());
+                real.setEmail(email);
+                real.setRole(role);
+                real.setJoinedAt(Instant.now());
+                return MemberResponse.from(tripMemberRepository.save(real));
+            }
+        }
+
         TripMember member = new TripMember();
         member.setTripId(ctx.trip().getId());
         member.setUserId(null); // ghost
         member.setDisplayName(request.displayName().trim());
-        member.setEmail(normalizeEmail(request.email())); // lets a later invite auto-merge this ghost
-        member.setRole(request.role() != null ? request.role() : MemberRole.VIEWER);
+        member.setEmail(email); // lets a later sign-up/invite auto-link this ghost
+        member.setRole(role);
         return MemberResponse.from(tripMemberRepository.save(member));
     }
 

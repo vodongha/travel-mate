@@ -1,5 +1,7 @@
 package com.travelmate.trip;
 
+import com.travelmate.checklist.ChecklistCompletion;
+import com.travelmate.checklist.ChecklistCompletionRepository;
 import com.travelmate.checklist.ChecklistItem;
 import com.travelmate.checklist.ChecklistItemRepository;
 import com.travelmate.expense.Expense;
@@ -8,12 +10,14 @@ import com.travelmate.expense.ExpenseShare;
 import com.travelmate.expense.ExpenseShareRepository;
 import com.travelmate.fund.FundContribution;
 import com.travelmate.fund.FundContributionRepository;
-import com.travelmate.ticket.Ticket;
-import com.travelmate.ticket.TicketRepository;
+import com.travelmate.ticket.TicketMember;
+import com.travelmate.ticket.TicketMemberRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Re-points every member-scoped record from one trip member onto another — the data half of the
@@ -26,19 +30,22 @@ public class MemberMergeService {
     private final ExpenseRepository expenseRepository;
     private final ExpenseShareRepository shareRepository;
     private final FundContributionRepository fundContributionRepository;
-    private final TicketRepository ticketRepository;
+    private final TicketMemberRepository ticketMemberRepository;
     private final ChecklistItemRepository checklistItemRepository;
+    private final ChecklistCompletionRepository checklistCompletionRepository;
 
     public MemberMergeService(ExpenseRepository expenseRepository,
                               ExpenseShareRepository shareRepository,
                               FundContributionRepository fundContributionRepository,
-                              TicketRepository ticketRepository,
-                              ChecklistItemRepository checklistItemRepository) {
+                              TicketMemberRepository ticketMemberRepository,
+                              ChecklistItemRepository checklistItemRepository,
+                              ChecklistCompletionRepository checklistCompletionRepository) {
         this.expenseRepository = expenseRepository;
         this.shareRepository = shareRepository;
         this.fundContributionRepository = fundContributionRepository;
-        this.ticketRepository = ticketRepository;
+        this.ticketMemberRepository = ticketMemberRepository;
         this.checklistItemRepository = checklistItemRepository;
+        this.checklistCompletionRepository = checklistCompletionRepository;
     }
 
     /** Move all of {@code sourceId}'s expenses, shares, contributions, tickets and checklist
@@ -69,11 +76,39 @@ public class MemberMergeService {
         for (FundContribution c : fundContributionRepository.findByMemberId(sourceId)) {
             c.setMemberId(targetId);
         }
-        for (Ticket t : ticketRepository.findByMemberId(sourceId)) {
-            t.setMemberId(targetId);
+
+        // Ticket memberships: re-point each of the source's rows to the target, but skip (delete) a
+        // row when the target is already on that same ticket (the join is unique per ticket+member).
+        Set<Long> targetTicketIds = new HashSet<>();
+        for (TicketMember tm : ticketMemberRepository.findByMemberId(targetId)) {
+            targetTicketIds.add(tm.getTicketId());
         }
+        for (TicketMember tm : ticketMemberRepository.findByMemberId(sourceId)) {
+            if (targetTicketIds.contains(tm.getTicketId())) {
+                ticketMemberRepository.delete(tm);
+            } else {
+                tm.setMemberId(targetId);
+                targetTicketIds.add(tm.getTicketId());
+            }
+        }
+
         for (ChecklistItem i : checklistItemRepository.findByAssigneeId(sourceId)) {
             i.setAssigneeId(targetId);
+        }
+
+        // Checklist completions: move the source's ticks to the target, skipping items the target
+        // already ticked (the join is unique per item+member).
+        Set<Long> targetDoneItems = new HashSet<>();
+        for (ChecklistCompletion c : checklistCompletionRepository.findByMemberId(targetId)) {
+            targetDoneItems.add(c.getItemId());
+        }
+        for (ChecklistCompletion c : checklistCompletionRepository.findByMemberId(sourceId)) {
+            if (targetDoneItems.contains(c.getItemId())) {
+                checklistCompletionRepository.delete(c);
+            } else {
+                c.setMemberId(targetId);
+                targetDoneItems.add(c.getItemId());
+            }
         }
     }
 }

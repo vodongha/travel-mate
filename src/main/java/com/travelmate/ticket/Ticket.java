@@ -11,11 +11,10 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
- * A ticket assigned to one trip member (their bus ticket, sightseeing pass, etc.). {@code qrData}
- * is the decoded QR/barcode <em>string</em>, never an image (SPEC §2.7) — the app regenerates the
- * QR. {@code memberId} references TRIP_MEMBERS.ID so a member can show just their own ticket, or is
- * {@code null} for a <em>group</em> ticket — a shared booking (one entry pass for the whole group)
- * that belongs to no single member and that everyone on the trip can see.
+ * A ticket (bus ticket, sightseeing pass, boarding pass…). {@code qrData} is the decoded QR/barcode
+ * <em>string</em>, never an image (SPEC §2.7) — the app regenerates the QR. Owners are stored in the
+ * TICKET_MEMBERS join (a ticket may cover several members); a ticket with no members is a
+ * <em>group</em> ticket shared by the whole trip.
  */
 @Entity
 @Table(name = "TICKETS")
@@ -24,10 +23,6 @@ public class Ticket extends BaseEntity {
 
     @Column(name = "TRIP_ID", nullable = false)
     private Long tripId;
-
-    // Null for a group ticket (shared, belongs to the whole trip rather than one member).
-    @Column(name = "MEMBER_ID")
-    private Long memberId;
 
     @Column(name = "TITLE", nullable = false, length = 200)
     private String title;
@@ -61,14 +56,6 @@ public class Ticket extends BaseEntity {
 
     public void setTripId(Long tripId) {
         this.tripId = tripId;
-    }
-
-    public Long getMemberId() {
-        return memberId;
-    }
-
-    public void setMemberId(Long memberId) {
-        this.memberId = memberId;
     }
 
     public String getTitle() {

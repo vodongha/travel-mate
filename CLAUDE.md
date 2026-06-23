@@ -54,7 +54,17 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
   - **Place ↔ itinerary delete sync.** Deleting an event (or clearing its location) soft-deletes the
     place when no other event uses it; deleting a place unlinks it from events (they keep, lose
     location). See `EventService.pruneOrphanPlace` + `PlaceService.delete`.
-  - **Migrations run V1–V15.** Integration tests (`*IT`) run against a docker-compose Oracle Free
+  - **Ticket → itinerary link (V17)** and **a ticket covers many members (V18, `TICKET_MEMBERS`)** —
+    a shared booking lists several owners; no members = a group ticket. `MemberMergeService`
+    re-points ticket memberships.
+  - **Per-member checklist (V19, `CHECKLIST_COMPLETIONS`)** — the list is shared but each member
+    ticks their own copy; the API returns the caller's own completion only.
+  - **Member auto-link** — signing up (or adding a "ghost" with an existing account's email) links
+    the real account in place and auto-joins the trips (`AuthService.claimGhostMemberships`,
+    `TripService.addGhostMember`); plus a manual **merge member** action (re-point + remove).
+  - **Read-only after a trip ends** — `TripAccessGuard.effectiveRole` drops every non-owner to
+    VIEWER once the end date passes (derived on read; stored role untouched).
+  - **Migrations run V1–V19.** Integration tests (`*IT`) run against a docker-compose Oracle Free
     (`docker compose up -d` → `./mvnw verify`) and in CI against a `gvenzl/oracle-free` service.
 
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
