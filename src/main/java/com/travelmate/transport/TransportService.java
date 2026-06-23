@@ -42,8 +42,6 @@ public class TransportService {
         Transport t = new Transport();
         t.setTripId(trip.getId());
         t.setTransportType(request.transportType());
-        t.setProvider(request.provider());
-        t.setBookingCode(request.bookingCode());
         t.setDeparturePlace(request.departurePlace());
         t.setArrivalPlace(request.arrivalPlace());
         t.setDepartureTime(request.departureTime());
@@ -65,12 +63,6 @@ public class TransportService {
         Transport t = loadInTrip(transportRid, trip.getId());
         if (request.transportType() != null) {
             t.setTransportType(request.transportType());
-        }
-        if (request.provider() != null) {
-            t.setProvider(blankToNull(request.provider()));
-        }
-        if (request.bookingCode() != null) {
-            t.setBookingCode(blankToNull(request.bookingCode()));
         }
         if (request.departurePlace() != null) {
             t.setDeparturePlace(blankToNull(request.departurePlace()));

@@ -17,6 +17,9 @@ public record CreateTicketRequest(
         // Optional: a boarding pass may be seat-only, with no scannable QR string.
         @Size(max = 4000) String qrData,
         @Size(max = 50) String seat,
+        // Carrier/airline + booking (PNR) code (mainly for TRANSPORT tickets).
+        @Size(max = 150) String provider,
+        @Size(max = 100) String bookingCode,
         // Optional link to the itinerary item this ticket is for (EVENT | TRANSPORT | ACCOMMODATION).
         @Size(max = 20) String itineraryKind,
         @Size(max = 36) String itineraryRid,

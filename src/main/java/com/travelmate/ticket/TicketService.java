@@ -100,6 +100,8 @@ public class TicketService {
         }
         ticket.setQrData(request.qrData());
         ticket.setSeat(request.seat());
+        ticket.setProvider(request.provider());
+        ticket.setBookingCode(request.bookingCode());
         ticket.setNote(request.note());
         applyItinerary(ticket, request.itineraryKind(), request.itineraryRid(), ctx.trip().getId());
         ticket = ticketRepository.save(ticket);
@@ -141,6 +143,12 @@ public class TicketService {
         }
         if (request.seat() != null) {
             ticket.setSeat(request.seat().isBlank() ? null : request.seat());
+        }
+        if (request.provider() != null) {
+            ticket.setProvider(request.provider().isBlank() ? null : request.provider());
+        }
+        if (request.bookingCode() != null) {
+            ticket.setBookingCode(request.bookingCode().isBlank() ? null : request.bookingCode());
         }
         if (request.note() != null) {
             ticket.setNote(request.note().isBlank() ? null : request.note());
