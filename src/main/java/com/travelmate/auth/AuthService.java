@@ -101,6 +101,7 @@ public class AuthService {
                 || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
             throw new ApiException(ErrorCode.UNAUTHENTICATED, "Invalid email or password.");
         }
+        ensureEnabled(user);
         return buildAuthResponse(user);
     }
 
@@ -121,8 +122,16 @@ public class AuthService {
             created.setPasswordHash(null);
             return userRepository.save(created);
         });
+        ensureEnabled(user);
         claimGhostMemberships(user);
         return buildAuthResponse(user);
+    }
+
+    /** A disabled account cannot start or continue a session (login, Google sign-in, refresh). */
+    private void ensureEnabled(User user) {
+        if (user.isDisabled()) {
+            throw new ApiException(ErrorCode.UNAUTHENTICATED, "This account has been disabled.");
+        }
     }
 
     /**
@@ -160,6 +169,7 @@ public class AuthService {
 
         token.setUsedAt(now); // rotate: this token can never be used again
         User user = loadUser(token.getUserId());
+        ensureEnabled(user);
         return buildAuthResponse(user);
     }
 

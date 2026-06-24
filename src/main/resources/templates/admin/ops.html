@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Ops & libs')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1>Ops &amp; libs</h1>
+      <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
+    </div>
+
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <div class="toolbar">
+      <span class="muted" th:if="${snapshot}">
+        Last checked: <span th:text="${snapshot.checkedAt}">—</span>
+      </span>
+      <span class="muted" th:unless="${snapshot}">Not checked yet — run a refresh.</span>
+      <div class="spacer" style="flex:1"></div>
+      <form method="post" th:action="@{/admin/ops/refresh}">
+        <button class="primary" type="submit">Refresh now</button>
+      </form>
+    </div>
+
+    <div th:if="${snapshot}">
+      <!-- per-source errors -->
+      <div th:if="${!snapshot.errors.isEmpty()}" class="flash error">
+        <div th:each="e : ${snapshot.errors}" th:text="${e}">error</div>
+      </div>
+
+      <!-- Dependabot -->
+      <h2 style="margin-top:24px">Dependabot alerts</h2>
+      <p class="muted" th:unless="${snapshot.dependabotConfigured}">
+        Set <code>OPS_GITHUB_TOKEN</code> to enable Dependabot alerts.
+      </p>
+      <table th:if="${snapshot.dependabotConfigured}">
+        <thead><tr><th>Severity</th><th>Repo</th><th>Package</th><th>Summary</th></tr></thead>
+        <tbody>
+          <tr th:each="a : ${snapshot.alerts}">
+            <td><span class="badge danger" th:text="${a.severity}">high</span></td>
+            <td th:text="${a.repo}">repo</td>
+            <td th:text="${a.packageName}">pkg</td>
+            <td><a th:href="${a.url}" target="_blank" rel="noopener" th:text="${a.summary}">summary</a></td>
+          </tr>
+          <tr th:if="${snapshot.alerts.isEmpty()}"><td colspan="4" class="muted">No open alerts. 🎉</td></tr>
+        </tbody>
+      </table>
+
+      <!-- Maven -->
+      <h2 style="margin-top:24px">Backend dependencies (Maven)</h2>
+      <div th:replace="~{admin/fragments :: libTable(${snapshot.maven})}"></div>
+
+      <!-- pub.dev -->
+      <h2 style="margin-top:24px">App dependencies (pub.dev)</h2>
+      <div th:replace="~{admin/fragments :: libTable(${snapshot.pub})}"></div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

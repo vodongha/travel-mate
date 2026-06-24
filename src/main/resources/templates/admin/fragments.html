@@ -25,5 +25,23 @@
     <button class="signout" type="submit">Sign out</button>
   </form>
 </aside>
+
+<!-- Reusable outdated/up-to-date dependency table (used by admin/ops). -->
+<table th:fragment="libTable(items)">
+  <thead><tr><th>Package</th><th>Current</th><th>Latest</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr th:each="l : ${items}">
+      <td th:text="${l.name}">pkg</td>
+      <td th:text="${l.current}">1.0.0</td>
+      <td th:text="${l.latest}">1.1.0</td>
+      <td>
+        <span th:if="${l.outdated}" class="badge danger">Outdated</span>
+        <span th:if="${!l.outdated and l.note.isEmpty()}" class="badge">Up to date</span>
+        <span th:if="${!l.note.isEmpty()}" class="badge" th:text="${l.note}">n/a</span>
+      </td>
+    </tr>
+    <tr th:if="${items.isEmpty()}"><td colspan="4" class="muted">Nothing to show.</td></tr>
+  </tbody>
+</table>
 </body>
 </html>

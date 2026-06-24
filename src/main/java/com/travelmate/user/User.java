@@ -48,6 +48,10 @@ public class User extends BaseEntity {
     @Column(name = "IS_SUPERADMIN", nullable = false)
     private boolean superadmin = false;
 
+    /** Admin-disabled account: still listed in the panel, but cannot log in or refresh tokens. */
+    @Column(name = "DISABLED", nullable = false)
+    private boolean disabled = false;
+
     public User() {
     }
 
@@ -57,6 +61,14 @@ public class User extends BaseEntity {
 
     public void setSuperadmin(boolean superadmin) {
         this.superadmin = superadmin;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     public String getEmail() {
