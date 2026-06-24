@@ -4,8 +4,9 @@ name: CI
 on:
   push:
     branches: [develop]
+  # PRs into develop (incl. Dependabot updates) and the release PR into master.
   pull_request:
-    branches: [master]
+    branches: [develop, master]
 
 jobs:
   verify:
