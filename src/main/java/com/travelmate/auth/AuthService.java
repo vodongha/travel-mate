@@ -57,7 +57,7 @@ public class AuthService {
                        JwtService jwtService,
                        GoogleTokenVerifier googleTokenVerifier,
                        EmailSender emailSender,
-                       @Value("${app.auth.refresh-ttl-days:30}") long refreshTtlDays,
+                       @Value("${app.auth.refresh-ttl-days:365}") long refreshTtlDays,
                        @Value("${app.auth.email-verify-ttl-hours:24}") long emailVerifyTtlHours,
                        @Value("${app.auth.password-reset-ttl-hours:1}") long passwordResetTtlHours,
                        @Value("${app.public-url:http://localhost:8000}") String publicUrl) {

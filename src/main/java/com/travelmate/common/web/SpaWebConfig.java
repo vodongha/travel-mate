@@ -31,8 +31,9 @@ public class SpaWebConfig implements WebMvcConfigurer {
                         if (requested.exists() && requested.isReadable()) {
                             return requested;
                         }
-                        // Let API calls 404 normally; only HTML routes fall back to the SPA shell.
-                        if (resourcePath.startsWith("api/")) {
+                        // Let API calls and the server-rendered admin panel resolve to their own
+                        // handlers; only the Flutter SPA's own routes fall back to index.html.
+                        if (resourcePath.startsWith("api/") || resourcePath.startsWith("admin")) {
                             return null;
                         }
                         // A missing *asset* (a path whose last segment has a file extension, e.g.

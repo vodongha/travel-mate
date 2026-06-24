@@ -44,7 +44,19 @@ public class User extends BaseEntity {
     @Column(name = "PROVIDER", nullable = false, length = 20)
     private AuthProvider provider;
 
+    /** Platform super-admin: gates the server-rendered {@code /admin} panel (not a trip role). */
+    @Column(name = "IS_SUPERADMIN", nullable = false)
+    private boolean superadmin = false;
+
     public User() {
+    }
+
+    public boolean isSuperadmin() {
+        return superadmin;
+    }
+
+    public void setSuperadmin(boolean superadmin) {
+        this.superadmin = superadmin;
     }
 
     public String getEmail() {

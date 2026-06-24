@@ -11,4 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByRid(String rid);
 
     boolean existsByEmail(String email);
+
+    long countBySuperadminTrue();
 }

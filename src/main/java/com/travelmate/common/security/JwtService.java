@@ -28,7 +28,7 @@ public class JwtService {
     private final String issuer;
 
     public JwtService(@Value("${app.jwt.secret}") String secret,
-                      @Value("${app.jwt.access-ttl:PT60M}") Duration accessTtl,
+                      @Value("${app.jwt.access-ttl:PT720H}") Duration accessTtl,
                       @Value("${app.jwt.issuer:travel-mate}") String issuer) {
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         if (keyBytes.length < 32) {
