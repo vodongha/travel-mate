@@ -37,7 +37,9 @@ app:
     # Override in every real environment via JWT_SECRET. The fallback is a clearly-insecure
     # dev/test placeholder (>= 32 bytes for HS256), never a real secret.
     secret: ${JWT_SECRET:dev-insecure-placeholder-secret-override-me-0123456789}
-    access-ttl: PT60M
+    # Long-lived access token so the app stays signed in (override via JWT_ACCESS_TTL, ISO-8601
+    # duration). 30 days; paired with a 1-year refresh token below.
+    access-ttl: ${JWT_ACCESS_TTL:PT720H}
     issuer: travel-mate
   google:
     # The project's **Web** OAuth client id — must equal the app's serverClientId so the Google ID
@@ -55,7 +57,8 @@ app:
     # Empty falls back to Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS).
     credentials: ${FCM_CREDENTIALS:}
   auth:
-    refresh-ttl-days: 30
+    # Keep the session alive for a year (override via AUTH_REFRESH_TTL_DAYS).
+    refresh-ttl-days: ${AUTH_REFRESH_TTL_DAYS:365}
     email-verify-ttl-hours: 24
     password-reset-ttl-hours: 1
   request:
