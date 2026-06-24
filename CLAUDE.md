@@ -67,6 +67,23 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
   - **Migrations run V1–V19.** Integration tests (`*IT`) run against a docker-compose Oracle Free
     (`docker compose up -d` → `./mvnw verify`) and in CI against a `gvenzl/oracle-free` service.
 
+  ### Admin panel (`/admin`, server-rendered)
+
+  A platform super-admin panel at **`trippo.io.vn/admin`** (package `com.travelmate.admin`),
+  separate from the JSON API and the Flutter web SPA:
+  - **Auth:** a dedicated Spring Security chain (`SecurityConfig#adminFilterChain`, before the web
+    chain) with **session + form login + CSRF** — not JWT. Only an account with **`USERS.IS_SUPERADMIN`**
+    (V23) and a password can enter (`AdminUserDetailsService` → `ROLE_ADMIN`); the account is
+    re-checked each request so revoking the flag kills a live session.
+  - **Admins are made by a one-off bootstrap, never by the panel:** `AdminBootstrapRunner` runs only
+    when `admin.bootstrap.email` is set — `fly secrets set ADMIN_BOOTSTRAP_EMAIL=… ADMIN_PASSWORD=…`,
+    restart once, then unset. Promotes an existing account or creates a new LOCAL admin.
+  - **Audit:** every admin mutation writes an append-only `ADMIN_AUDIT_LOG` row (V23) via
+    `AdminService.audit`.
+  - **Views:** Thymeleaf (`resources/templates/admin/`); styles are **SCSS** at `src/main/scss/admin.scss`
+    compiled by the `dart-sass-maven-plugin` to `static/admin-assets/admin.css` (served outside
+    `/admin/` so it loads on the login page). `/admin` is excluded from the SPA fallback in `SpaWebConfig`.
+
 **The full specification — modules, DDL, conventions — lives in [`docs/SPEC.md`](docs/SPEC.md)
 and is the source of truth.** This file is the working guide; when the two disagree, SPEC.md wins
 (and fix this file). Read SPEC.md §2 (conventions) and §12 (the convention checklist) before

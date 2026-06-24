@@ -1,0 +1,224 @@
+// Trippo admin panel styles. Compiled to static/admin-assets/admin.css by the dart-sass Maven
+// plugin and linked from the Thymeleaf templates. Keep it self-contained (no external CSS).
+
+// ── tokens ──────────────────────────────────────────────────────────────────
+$bg:          #f7f8fb;
+$surface:     #ffffff;
+$line:        #e6e8ef;
+$text:        #1b1c22;
+$muted:       #6b6f7d;
+$brand:       #4f46e5; // matches the app's brand indigo
+$brand-weak:  #eef0ff;
+$danger:      #d92d20;
+$ok:          #067647;
+$radius:      14px;
+$font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+$breakpoint-narrow: 720px;
+
+// ── base ────────────────────────────────────────────────────────────────────
+:root { font-family: $font; }
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: $bg;
+  color: $text;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: $brand; text-decoration: none; }
+
+// ── app shell ───────────────────────────────────────────────────────────────
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: $surface;
+  border-right: 1px solid $line;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+
+  .brand { font-weight: 800; font-size: 18px; padding: 6px 10px 14px; color: $brand; }
+  .spacer { flex: 1; }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: $text;
+    font-weight: 600;
+    font-size: 14px;
+
+    &:hover { background: $bg; }
+    &.active { background: $brand-weak; color: $brand; }
+
+    .ico { width: 18px; text-align: center; }
+  }
+}
+
+.signout {
+  border: 1px solid $line;
+  background: $surface;
+  color: $muted;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+
+  &:hover { background: $bg; }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.topbar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 { font-size: 24px; font-weight: 800; margin: 0; }
+}
+
+.who { color: $muted; font-size: 14px; }
+
+// ── cards & tables ──────────────────────────────────────────────────────────
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: $radius;
+  padding: 18px 20px;
+
+  .label { color: $muted; font-size: 13px; font-weight: 600; }
+  .value { font-size: 30px; font-weight: 800; margin-top: 6px; }
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: $radius;
+  overflow: hidden;
+
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid $line; font-size: 14px; }
+  th { background: $bg; color: $muted; font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+}
+
+// ── flash messages ──────────────────────────────────────────────────────────
+.flash {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 14px;
+
+  &.ok { background: #ecfdf3; color: $ok; }
+  &.error { background: #fef3f2; color: $danger; }
+}
+
+// ── login ───────────────────────────────────────────────────────────────────
+.login-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-card {
+  background: $surface;
+  border: 1px solid $line;
+  border-radius: 18px;
+  padding: 28px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+
+  h1 { font-size: 20px; text-align: center; }
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $muted;
+}
+
+input {
+  padding: 11px 12px;
+  border: 1px solid $line;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  color: $text;
+  background: $surface;
+
+  &:focus { outline: none; border-color: $brand; }
+}
+
+button.primary {
+  background: $brand;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+
+  &:hover { filter: brightness(1.05); }
+}
+
+// ── responsive ──────────────────────────────────────────────────────────────
+@media (max-width: $breakpoint-narrow) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    width: auto;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .spacer { flex: 0; }
+  }
+  .main { padding: 20px 16px; }
+}

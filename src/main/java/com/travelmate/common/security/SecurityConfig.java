@@ -6,8 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -82,12 +84,45 @@ public class SecurityConfig {
     }
 
     /**
+     * Dedicated chain for the server-rendered admin panel ({@code /admin/**}). Unlike the JSON API
+     * this is **session + form login** with **CSRF enabled** (Thymeleaf forms carry the token), and
+     * only an account with {@code ROLE_ADMIN} (a super-admin, via {@link AdminUserDetailsService})
+     * may enter. Runs before the catch-all web chain so {@code /admin} isn't served as the SPA.
+     */
+    @Bean
+    @Order(3)
+    SecurityFilterChain adminFilterChain(HttpSecurity http, UserDetailsService adminUserDetailsService,
+                                         PasswordEncoder passwordEncoder) throws Exception {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(adminUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        http
+                .securityMatcher("/admin/**")
+                .authenticationProvider(provider)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/admin/login").permitAll()
+                        .anyRequest().hasRole("ADMIN"))
+                .formLogin(form -> form
+                        .loginPage("/admin/login")
+                        .loginProcessingUrl("/admin/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/admin", true)
+                        .failureUrl("/admin/login?error"))
+                .logout(logout -> logout
+                        .logoutUrl("/admin/logout")
+                        .logoutSuccessUrl("/admin/login?logout"))
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+        return http.build();
+    }
+
+    /**
      * Everything outside {@code /api/**} is the bundled Flutter web client (index.html + assets),
      * served same-origin. It is public static content — no auth, no JWT filter. The SPA deep-link
      * fallback lives in {@code SpaWebConfig}.
      */
     @Bean
-    @Order(3)
+    @Order(4)
     SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
                 .securityMatcher("/**")

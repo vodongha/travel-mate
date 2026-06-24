@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Dashboard')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('dashboard')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1>Dashboard</h1>
+      <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <div class="label">Users</div>
+        <div class="value" th:text="${counts.users}">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Admins</div>
+        <div class="value" th:text="${counts.admins}">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Trips</div>
+        <div class="value" th:text="${counts.trips}">0</div>
+      </div>
+      <div class="card">
+        <div class="label">Expenses</div>
+        <div class="value" th:text="${counts.expenses}">0</div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
