@@ -4,10 +4,10 @@ name: Dependabot auto-merge
 # (workflow_run), so a PR is only ever merged after `mvn verify` (Oracle IT) has passed — never
 # before. Runs in the trusted base-repo context.
 #
-# The merge uses GH_PAT, not the default GITHUB_TOKEN: a push made with GITHUB_TOKEN does NOT
-# trigger further workflows, which would skip Deploy and Sync-develop. With a PAT the merge to
-# master fires Deploy (build -> deploy to Fly.io) last, only once CI passes, and sync-develop
-# merges master back into develop. (Set the GH_PAT repo secret to a PAT with `repo` + `workflow`.)
+# Dependabot targets `develop` (master is release-only), so the merge lands on develop and the
+# bumps ride the next develop -> master release — it does NOT auto-deploy. The merge uses GH_PAT
+# rather than GITHUB_TOKEN so the merge push still triggers the follow-up CI run on develop.
+# (Set the GH_PAT repo secret to a PAT with `repo` + `workflow`.)
 on:
   workflow_run:
     workflows: ["CI"]
