@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Maven dependencies (pom.xml) — weekly, grouped into one PR to keep the noise down.
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      maven-deps:
+        patterns: ["*"]
+  # Keep the GitHub Actions used by CI/CD up to date too.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
