@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('User')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('users')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1 th:text="${u.name}">User</h1>
+      <span class="who"><a th:href="@{/admin/users}">← Back to users</a></span>
+    </div>
+
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <div class="detail-grid">
+      <!-- Identity / edit -->
+      <section class="panel">
+        <h2>Profile</h2>
+        <dl class="kv">
+          <dt>RID</dt><dd th:text="${u.rid}">rid</dd>
+          <dt>Provider</dt><dd th:text="${u.provider}">LOCAL</dd>
+          <dt>Email verified</dt><dd th:text="${u.emailVerified} ? 'Yes' : 'No'">No</dd>
+          <dt>Status</dt>
+          <dd>
+            <span th:if="${u.superadmin}" class="badge brand">Admin</span>
+            <span th:if="${u.disabled}" class="badge danger">Disabled</span>
+            <span th:if="${!u.superadmin and !u.disabled}" class="badge">Active</span>
+          </dd>
+        </dl>
+        <form method="post" th:action="@{/admin/users/{rid}/edit(rid=${u.rid})}">
+          <label>Name <input type="text" name="name" th:value="${u.name}" required></label>
+          <label>Email <input type="email" name="email" th:value="${u.email}" required></label>
+          <button class="primary" type="submit">Save profile</button>
+        </form>
+      </section>
+
+      <!-- Security actions -->
+      <section class="panel">
+        <h2>Security</h2>
+
+        <form method="post" th:action="@{/admin/users/{rid}/reset-password(rid=${u.rid})}">
+          <label>New password
+            <input type="password" name="password" minlength="8" placeholder="At least 8 characters" required>
+          </label>
+          <button class="primary" type="submit">Reset password</button>
+        </form>
+
+        <hr>
+
+        <!-- Grant / revoke admin -->
+        <form method="post" th:action="@{/admin/users/{rid}/admin(rid=${u.rid})}">
+          <input type="hidden" name="grant" th:value="${!u.superadmin}">
+          <button type="submit" th:classappend="${u.superadmin} ? 'btn' : 'btn brand'"
+                  th:disabled="${u.id == self and u.superadmin}"
+                  th:text="${u.superadmin} ? 'Revoke admin' : 'Grant admin'">Grant admin</button>
+        </form>
+
+        <!-- Disable / restore -->
+        <form method="post" th:action="@{/admin/users/{rid}/disabled(rid=${u.rid})}">
+          <input type="hidden" name="disabled" th:value="${!u.disabled}">
+          <button type="submit" th:classappend="${u.disabled} ? 'btn brand' : 'btn danger'"
+                  th:disabled="${u.id == self and !u.disabled}"
+                  th:text="${u.disabled} ? 'Restore account' : 'Disable account'">Disable account</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

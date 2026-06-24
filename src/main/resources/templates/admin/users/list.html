@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Users')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('users')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1>Users</h1>
+      <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
+    </div>
+
+    <form class="toolbar" method="get" th:action="@{/admin/users}">
+      <input type="search" name="q" th:value="${q}" placeholder="Search email or name…" autofocus>
+      <button class="primary" type="submit">Search</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr><th>Email</th><th>Name</th><th>Status</th><th>Provider</th></tr>
+      </thead>
+      <tbody>
+        <tr th:each="u : ${users.content}">
+          <td><a th:href="@{/admin/users/{rid}(rid=${u.rid})}" th:text="${u.email}">e@x.com</a></td>
+          <td th:text="${u.name}">Name</td>
+          <td>
+            <span th:if="${u.superadmin}" class="badge brand">Admin</span>
+            <span th:if="${u.disabled}" class="badge danger">Disabled</span>
+            <span th:if="${!u.superadmin and !u.disabled}" class="badge">Active</span>
+          </td>
+          <td th:text="${u.provider}">LOCAL</td>
+        </tr>
+        <tr th:if="${users.totalElements == 0}">
+          <td colspan="4" class="muted">No users match.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="pager" th:if="${users.totalPages > 1}">
+      <a th:if="${users.hasPrevious()}"
+         th:href="@{/admin/users(q=${q}, page=${users.number - 1})}">← Prev</a>
+      <span th:text="'Page ' + (${users.number} + 1) + ' / ' + ${users.totalPages}">Page 1 / 1</span>
+      <a th:if="${users.hasNext()}"
+         th:href="@{/admin/users(q=${q}, page=${users.number + 1})}">Next →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

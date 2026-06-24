@@ -4,11 +4,15 @@ import com.travelmate.expense.ExpenseRepository;
 import com.travelmate.trip.TripRepository;
 import com.travelmate.user.User;
 import com.travelmate.user.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /** Backing logic for the {@code /admin} panel: dashboard counters, the current admin, and audit. */
 @Service
@@ -49,5 +53,18 @@ public class AdminService {
     public void audit(Long actorUserId, String action, String targetType, String targetRid,
                       String detail) {
         auditRepository.save(new AdminAuditLog(actorUserId, action, targetType, targetRid, detail));
+    }
+
+    /** A page of audit entries, newest first. */
+    @Transactional(readOnly = true)
+    public Page<AdminAuditLog> auditLog(Pageable pageable) {
+        return auditRepository.findAllByOrderByCreatedAtDesc(pageable);
+    }
+
+    /** Resolve actor user ids to their email (for display in the audit table). */
+    @Transactional(readOnly = true)
+    public Map<Long, String> actorLabels(Collection<Long> actorUserIds) {
+        return userRepository.findAllById(actorUserIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getEmail));
     }
 }
