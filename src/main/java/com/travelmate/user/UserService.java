@@ -110,6 +110,7 @@ public class UserService {
         device.setUserId(userId);
         device.setFcmToken(request.fcmToken());
         device.setPlatform(request.platform());
+        device.setLocale(request.locale());
         device.setLastSeenAt(Instant.now());
         return DeviceResponse.from(userDeviceRepository.save(device));
     }

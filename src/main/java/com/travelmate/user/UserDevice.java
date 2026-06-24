@@ -29,6 +29,10 @@ public class UserDevice extends BaseEntity {
     @Column(name = "LAST_SEEN_AT")
     private Instant lastSeenAt;
 
+    /** The owner's chosen UI language (BCP-47, e.g. "vi"/"en"); null = server default (English). */
+    @Column(name = "LOCALE", length = 10)
+    private String locale;
+
     protected UserDevice() {
     }
 
@@ -62,5 +66,13 @@ public class UserDevice extends BaseEntity {
 
     public void setLastSeenAt(Instant lastSeenAt) {
         this.lastSeenAt = lastSeenAt;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 }

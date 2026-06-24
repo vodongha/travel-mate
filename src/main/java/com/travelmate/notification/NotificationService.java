@@ -14,6 +14,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,8 +57,8 @@ public class NotificationService {
             Instant at = trip.getEndDate().plusDays(1).atTime(DAILY_SEND_TIME).atZone(zone).toInstant();
             if (at.isAfter(now)) {
                 enqueue(trip.getId(), null, null, NotificationType.DEBT_REMINDER, at,
-                        payload("Settle up — " + trip.getName(),
-                                "The trip is over. Check who owes whom and settle up.",
+                        payload("notif.debt.title", List.of(trip.getName()),
+                                "notif.debt.body", List.of(),
                                 "/trips/" + trip.getRid() + "/settlement"));
             }
         }
@@ -74,8 +75,8 @@ public class NotificationService {
         Instant remindAt = event.getStartTime().minus(Duration.ofMinutes(EVENT_REMINDER_MINUTES));
         if (remindAt.isAfter(now)) {
             enqueue(trip.getId(), null, event.getId(), NotificationType.EVENT_REMINDER, remindAt,
-                    payload("Upcoming: " + event.getTitle(),
-                            "Starts in " + EVENT_REMINDER_MINUTES + " minutes.",
+                    payload("notif.event.title", List.of(event.getTitle()),
+                            "notif.event.body", List.of(String.valueOf(EVENT_REMINDER_MINUTES)),
                             eventDeeplink(trip, event)));
         }
         // Accommodation check-in reminder. (Accommodation is also a dedicated entity now; this still
@@ -83,7 +84,8 @@ public class NotificationService {
         // entity's checkinTime — needs a non-event notification target.)
         if (event.getEventType() == Category.ACCOMMODATION && event.getStartTime().isAfter(now)) {
             enqueue(trip.getId(), null, event.getId(), NotificationType.HOTEL_CHECKIN, event.getStartTime(),
-                    payload("Check-in: " + event.getTitle(), "It's check-in time.",
+                    payload("notif.checkin.title", List.of(event.getTitle()),
+                            "notif.checkin.body", List.of(),
                             eventDeeplink(trip, event)));
         }
     }
@@ -99,12 +101,19 @@ public class NotificationService {
     private void scheduleCountdown(Trip trip, NotificationType type, int daysBefore, ZoneId zone, Instant now) {
         Instant at = trip.getStartDate().minusDays(daysBefore).atTime(DAILY_SEND_TIME).atZone(zone).toInstant();
         if (at.isAfter(now)) {
-            String label = daysBefore == 1 ? "tomorrow" : "in " + daysBefore + " days";
+            String destination =
+                    trip.getDestination() == null ? trip.getName() : trip.getDestination();
+            boolean tomorrow = daysBefore == 1;
+            String titleKey = tomorrow ? "notif.pretrip.tomorrow.title" : "notif.pretrip.days.title";
+            String bodyKey = tomorrow ? "notif.pretrip.tomorrow.body" : "notif.pretrip.days.body";
+            List<String> titleArgs = tomorrow
+                    ? List.of(trip.getName())
+                    : List.of(trip.getName(), String.valueOf(daysBefore));
+            List<String> bodyArgs = tomorrow
+                    ? List.of(destination)
+                    : List.of(destination, String.valueOf(daysBefore));
             enqueue(trip.getId(), null, null, type, at,
-                    payload(trip.getName() + " starts " + label,
-                            "Your trip to " + (trip.getDestination() == null ? trip.getName() : trip.getDestination())
-                                    + " starts " + label + ".",
-                            "/trips/" + trip.getRid()));
+                    payload(titleKey, titleArgs, bodyKey, bodyArgs, "/trips/" + trip.getRid()));
         }
     }
 
@@ -121,10 +130,18 @@ public class NotificationService {
         repository.save(n);
     }
 
-    private String payload(String title, String body, String deeplink) {
-        Map<String, String> map = new LinkedHashMap<>();
-        map.put("title", title);
-        map.put("body", body);
+    /**
+     * Stores the notification as a localization spec — a message key + positional args for the title
+     * and body, plus the deeplink — so the dispatcher can render it in each recipient device's
+     * language at send time (rather than baking in one language here).
+     */
+    private String payload(String titleKey, List<String> titleArgs,
+                           String bodyKey, List<String> bodyArgs, String deeplink) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("titleKey", titleKey);
+        map.put("titleArgs", titleArgs);
+        map.put("bodyKey", bodyKey);
+        map.put("bodyArgs", bodyArgs);
         map.put("deeplink", deeplink);
         try {
             return objectMapper.writeValueAsString(map);
