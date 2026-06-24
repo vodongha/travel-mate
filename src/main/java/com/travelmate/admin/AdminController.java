@@ -2,8 +2,6 @@ package com.travelmate.admin;
 
 import com.travelmate.user.User;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,14 +15,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** Server-rendered admin panel pages (Thymeleaf). The login POST/logout are handled by the
  * dedicated Spring Security chain in {@code SecurityConfig#adminFilterChain}. */
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
-
-    private static final int PAGE_SIZE = 20;
 
     private final AdminService adminService;
     private final AdminUserService adminUserService;
@@ -55,15 +52,20 @@ public class AdminController {
 
     // ── Users ────────────────────────────────────────────────────────────────
 
+    private static final Set<String> USER_SORTS = Set.of("id", "email", "name");
+
     @GetMapping("/users")
-    public String users(@RequestParam(required = false, defaultValue = "") String q,
+    public String users(@RequestParam(defaultValue = "") String q,
+                        @RequestParam(required = false) String sort,
+                        @RequestParam(required = false) String dir,
+                        @RequestParam(required = false) Integer size,
                         @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
+        int rows = DataTables.clampSize(size);
         Page<User> users = adminUserService.list(q,
-                PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("id").descending()));
+                DataTables.pageable(page, rows, DataTables.sort(sort, dir, USER_SORTS, "id")));
         model.addAttribute("admin", currentAdminName(principal));
         model.addAttribute("active", "users");
-        model.addAttribute("users", users);
-        model.addAttribute("q", q);
+        model.addAttribute("table", DataTables.view("/admin/users", q, sort, dir, rows, users));
         return "admin/users/list";
     }
 
@@ -106,16 +108,23 @@ public class AdminController {
 
     // ── Audit log ──────────────────────────────────────────────────────────────
 
+    private static final Set<String> AUDIT_SORTS = Set.of("createdAt", "action");
+
     @GetMapping("/audit")
-    public String audit(@RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
-        Page<AdminAuditLog> entries =
-                adminService.auditLog(PageRequest.of(Math.max(page, 0), PAGE_SIZE));
+    public String audit(@RequestParam(defaultValue = "") String q,
+                        @RequestParam(required = false) String sort,
+                        @RequestParam(required = false) String dir,
+                        @RequestParam(required = false) Integer size,
+                        @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
+        int rows = DataTables.clampSize(size);
+        Page<AdminAuditLog> entries = adminService.auditLog(q,
+                DataTables.pageable(page, rows, DataTables.sort(sort, dir, AUDIT_SORTS, "createdAt")));
         List<Long> actorIds = entries.getContent().stream()
                 .map(AdminAuditLog::getActorUserId).filter(java.util.Objects::nonNull).distinct().toList();
         Map<Long, String> actors = adminService.actorLabels(actorIds);
         model.addAttribute("admin", currentAdminName(principal));
         model.addAttribute("active", "audit");
-        model.addAttribute("entries", entries);
+        model.addAttribute("table", DataTables.view("/admin/audit", q, sort, dir, rows, entries));
         model.addAttribute("actors", actors);
         return "admin/audit";
     }

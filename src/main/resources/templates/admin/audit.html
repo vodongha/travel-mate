@@ -10,29 +10,33 @@
       <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
     </div>
 
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
+
     <table>
       <thead>
-        <tr><th>When</th><th>Admin</th><th>Action</th><th>Target</th><th>Detail</th></tr>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'When', 'createdAt')}"></th>
+          <th>Admin</th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Action', 'action')}"></th>
+          <th>Target</th>
+          <th>Detail</th>
+        </tr>
       </thead>
       <tbody>
-        <tr th:each="e : ${entries.content}">
+        <tr th:each="e : ${table.page.content}">
           <td th:text="${e.createdAt}">2026-01-01T00:00:00Z</td>
           <td th:text="${actors.get(e.actorUserId)} ?: '—'">admin@x.com</td>
           <td><span class="badge" th:text="${e.action}">ACTION</span></td>
           <td th:text="${e.targetType} + (${e.targetRid} != null ? ' ' + ${e.targetRid} : '')">USER</td>
           <td class="muted" th:text="${e.detail}">—</td>
         </tr>
-        <tr th:if="${entries.totalElements == 0}">
-          <td colspan="5" class="muted">No audit entries yet.</td>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="5" class="muted">No audit entries match.</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="pager" th:if="${entries.totalPages > 1}">
-      <a th:if="${entries.hasPrevious()}" th:href="@{/admin/audit(page=${entries.number - 1})}">← Prev</a>
-      <span th:text="'Page ' + (${entries.number} + 1) + ' / ' + ${entries.totalPages}">Page 1 / 1</span>
-      <a th:if="${entries.hasNext()}" th:href="@{/admin/audit(page=${entries.number + 1})}">Next →</a>
-    </div>
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
   </main>
 </div>
 </body>
