@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!-- Shared <head> for every admin page: meta + the linked stylesheet. -->
+<head th:fragment="head(title)">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title th:text="${title} + ' · Trippo Admin'">Trippo Admin</title>
+  <!-- Compiled from src/main/scss/admin.scss by the dart-sass Maven plugin. Served outside /admin/
+       so it loads on the (unauthenticated) login page too. -->
+  <link rel="stylesheet" th:href="@{/admin-assets/admin.css}">
+</head>
+<body>
+<!-- Left navigation. Pass the active key so the current item is highlighted. -->
+<aside th:fragment="sidebar(active)" class="sidebar">
+  <div class="brand">Trippo&nbsp;Admin</div>
+  <nav class="nav">
+    <a th:href="@{/admin}" th:classappend="${active=='dashboard'}?'active'"><span class="ico">▤</span> Dashboard</a>
+    <a th:href="@{/admin/users}" th:classappend="${active=='users'}?'active'"><span class="ico">◍</span> Users</a>
+    <a th:href="@{/admin/ops}" th:classappend="${active=='ops'}?'active'"><span class="ico">⚙</span> Ops &amp; libs</a>
+    <a th:href="@{/admin/audit}" th:classappend="${active=='audit'}?'active'"><span class="ico">▦</span> Audit log</a>
+  </nav>
+  <div class="spacer"></div>
+  <form th:action="@{/admin/logout}" method="post">
+    <button class="signout" type="submit">Sign out</button>
+  </form>
+</aside>
+</body>
+</html>
