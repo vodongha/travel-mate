@@ -56,6 +56,14 @@ app:
     # The service-account JSON content (inline). On Fly set FCM_CREDENTIALS to the file's contents.
     # Empty falls back to Application Default Credentials (GOOGLE_APPLICATION_CREDENTIALS).
     credentials: ${FCM_CREDENTIALS:}
+  ops:
+    # Admin "Ops & libs" page: which repos/refs to read pom.xml + pubspec.yaml from, and a GitHub
+    # token (read-only, scope security_events) to list Dependabot alerts. Token blank = alerts off.
+    backend-repo: ${OPS_BACKEND_REPO:vodongha/travel-mate}
+    backend-ref: ${OPS_BACKEND_REF:master}
+    app-repo: ${OPS_APP_REPO:vodongha/travel-mate-app}
+    app-ref: ${OPS_APP_REF:master}
+    github-token: ${OPS_GITHUB_TOKEN:}
   auth:
     # Keep the session alive for a year (override via AUTH_REFRESH_TTL_DAYS).
     refresh-ttl-days: ${AUTH_REFRESH_TTL_DAYS:365}
