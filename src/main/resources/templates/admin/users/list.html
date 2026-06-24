@@ -10,17 +10,19 @@
       <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
     </div>
 
-    <form class="toolbar" method="get" th:action="@{/admin/users}">
-      <input type="search" name="q" th:value="${q}" placeholder="Search email or name…" autofocus>
-      <button class="primary" type="submit">Search</button>
-    </form>
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
 
     <table>
       <thead>
-        <tr><th>Email</th><th>Name</th><th>Status</th><th>Provider</th></tr>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Email', 'email')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Name', 'name')}"></th>
+          <th>Status</th>
+          <th>Provider</th>
+        </tr>
       </thead>
       <tbody>
-        <tr th:each="u : ${users.content}">
+        <tr th:each="u : ${table.page.content}">
           <td><a th:href="@{/admin/users/{rid}(rid=${u.rid})}" th:text="${u.email}">e@x.com</a></td>
           <td th:text="${u.name}">Name</td>
           <td>
@@ -30,19 +32,13 @@
           </td>
           <td th:text="${u.provider}">LOCAL</td>
         </tr>
-        <tr th:if="${users.totalElements == 0}">
+        <tr th:if="${table.page.totalElements == 0}">
           <td colspan="4" class="muted">No users match.</td>
         </tr>
       </tbody>
     </table>
 
-    <div class="pager" th:if="${users.totalPages > 1}">
-      <a th:if="${users.hasPrevious()}"
-         th:href="@{/admin/users(q=${q}, page=${users.number - 1})}">← Prev</a>
-      <span th:text="'Page ' + (${users.number} + 1) + ' / ' + ${users.totalPages}">Page 1 / 1</span>
-      <a th:if="${users.hasNext()}"
-         th:href="@{/admin/users(q=${q}, page=${users.number + 1})}">Next →</a>
-    </div>
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
   </main>
 </div>
 </body>

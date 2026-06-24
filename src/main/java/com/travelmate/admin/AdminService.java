@@ -55,10 +55,10 @@ public class AdminService {
         auditRepository.save(new AdminAuditLog(actorUserId, action, targetType, targetRid, detail));
     }
 
-    /** A page of audit entries, newest first. */
+    /** A page of audit entries (sort comes from the pageable); optional search over action/target. */
     @Transactional(readOnly = true)
-    public Page<AdminAuditLog> auditLog(Pageable pageable) {
-        return auditRepository.findAllByOrderByCreatedAtDesc(pageable);
+    public Page<AdminAuditLog> auditLog(String query, Pageable pageable) {
+        return auditRepository.search(query == null ? "" : query.trim(), pageable);
     }
 
     /** Resolve actor user ids to their email (for display in the audit table). */

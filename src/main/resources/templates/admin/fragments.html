@@ -26,22 +26,35 @@
   </form>
 </aside>
 
-<!-- Reusable outdated/up-to-date dependency table (used by admin/ops). -->
-<table th:fragment="libTable(items)">
-  <thead><tr><th>Package</th><th>Current</th><th>Latest</th><th>Status</th></tr></thead>
-  <tbody>
-    <tr th:each="l : ${items}">
-      <td th:text="${l.name}">pkg</td>
-      <td th:text="${l.current}">1.0.0</td>
-      <td th:text="${l.latest}">1.1.0</td>
-      <td>
-        <span th:if="${l.outdated}" class="badge danger">Outdated</span>
-        <span th:if="${!l.outdated and l.note.isEmpty()}" class="badge">Up to date</span>
-        <span th:if="${!l.note.isEmpty()}" class="badge" th:text="${l.note}">n/a</span>
-      </td>
-    </tr>
-    <tr th:if="${items.isEmpty()}"><td colspan="4" class="muted">Nothing to show.</td></tr>
-  </tbody>
-</table>
+<!-- ── Server-side DataTable building blocks (see com.travelmate.admin.DataTables.View) ──────── -->
+
+<!-- Search box + rows-per-page selector. Submitting (or changing the size) re-requests the page
+     server-side, preserving the active sort via hidden fields. -->
+<form th:fragment="dtToolbar(view)" class="toolbar" method="get" th:action="@{${view.baseUrl}}">
+  <input type="search" name="q" th:value="${view.q}" placeholder="Search…">
+  <input type="hidden" name="sort" th:value="${view.sort}">
+  <input type="hidden" name="dir" th:value="${view.dir}">
+  <select name="size" class="dt-size" onchange="this.form.submit()" aria-label="Rows per page">
+    <option th:each="s : ${T(com.travelmate.admin.DataTables).PAGE_SIZES}"
+            th:value="${s}" th:text="${s} + ' / page'" th:selected="${s == view.size}">20 / page</option>
+  </select>
+  <button class="primary" type="submit">Search</button>
+</form>
+
+<!-- A sortable column header: clicking re-sorts server-side (toggling asc/desc) and resets to page 0. -->
+<th th:fragment="dtSortTh(view, label, key)" class="dt-sortable">
+  <a th:href="@{${view.baseUrl}(q=${view.q}, size=${view.size}, sort=${key}, dir=${view.nextDir(key)}, page=0)}">
+    <span th:text="${label}">Column</span><span class="dt-arrow" th:text="${view.arrow(key)}"></span>
+  </a>
+</th>
+
+<!-- Prev / page x of y · N total / Next — preserving search, sort and size. -->
+<div th:fragment="dtPager(view)" class="pager">
+  <a th:if="${view.page.hasPrevious()}" class="btn"
+     th:href="@{${view.baseUrl}(q=${view.q}, size=${view.size}, sort=${view.sort}, dir=${view.dir}, page=${view.page.number - 1})}">← Prev</a>
+  <span th:text="'Page ' + (${view.page.number} + 1) + ' / ' + (${view.page.totalPages} == 0 ? 1 : ${view.page.totalPages}) + ' · ' + ${view.page.totalElements} + ' total'">Page 1 / 1</span>
+  <a th:if="${view.page.hasNext()}" class="btn"
+     th:href="@{${view.baseUrl}(q=${view.q}, size=${view.size}, sort=${view.sort}, dir=${view.dir}, page=${view.page.number + 1})}">Next →</a>
+</div>
 </body>
 </html>

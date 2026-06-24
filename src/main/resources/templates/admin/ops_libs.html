@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Ops & libs')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1 th:text="${title}">Dependencies</h1>
+      <span class="who"><a th:href="@{/admin/ops}">← Ops overview</a></span>
+    </div>
+
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Package', 'name')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Current', 'current')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Latest', 'latest')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Status', 'outdated')}"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="l : ${table.page.content}">
+          <td th:text="${l.name}">pkg</td>
+          <td th:text="${l.current}">1.0.0</td>
+          <td th:text="${l.latest}">1.1.0</td>
+          <td>
+            <span th:if="${l.outdated}" class="badge danger">Outdated</span>
+            <span th:if="${!l.outdated and l.note.isEmpty()}" class="badge">Up to date</span>
+            <span th:if="${!l.note.isEmpty()}" class="badge" th:text="${l.note}">n/a</span>
+          </td>
+        </tr>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="4" class="muted">Nothing to show — run a refresh from the Ops overview.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+  </main>
+</div>
+</body>
+</html>

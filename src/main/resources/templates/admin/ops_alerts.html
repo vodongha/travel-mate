@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Dependabot alerts')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
+  <main class="main">
+    <div class="topbar">
+      <h1>Dependabot alerts</h1>
+      <span class="who"><a th:href="@{/admin/ops}">← Ops overview</a></span>
+    </div>
+
+    <p class="muted" th:unless="${configured}">
+      Set <code>OPS_GITHUB_TOKEN</code> to enable Dependabot alerts.
+    </p>
+
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Severity', 'severity')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Repo', 'repo')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Package', 'packageName')}"></th>
+          <th>Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="a : ${table.page.content}">
+          <td><span class="badge danger" th:text="${a.severity}">high</span></td>
+          <td th:text="${a.repo}">repo</td>
+          <td th:text="${a.packageName}">pkg</td>
+          <td><a th:href="${a.url}" target="_blank" rel="noopener" th:text="${a.summary}">summary</a></td>
+        </tr>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="4" class="muted">No open alerts. 🎉</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+  </main>
+</div>
+</body>
+</html>

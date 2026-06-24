@@ -1,0 +1,97 @@
+package com.travelmate.admin;
+
+import com.travelmate.admin.ops.OpsController;
+import com.travelmate.admin.ops.OpsService;
+import com.travelmate.admin.ops.OpsService.OpsSnapshot;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.data.domain.Page;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
+import org.thymeleaf.spring6.view.ThymeleafViewResolver;
+import org.thymeleaf.templatemode.TemplateMode;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+/**
+ * Renders every admin page through the real Thymeleaf engine (standalone MockMvc, mocked services)
+ * so a broken expression, fragment reference or {@code @{...}} link fails the build — the
+ * integration tests boot the context but never render a view. No security/filters are involved.
+ */
+class AdminTemplatesRenderTest {
+
+    private MockMvc mvc;
+
+    @BeforeEach
+    void setUp() {
+        AdminService adminService = mock(AdminService.class);
+        AdminUserService adminUserService = mock(AdminUserService.class);
+        OpsService opsService = mock(OpsService.class);
+
+        when(adminService.dashboardCounts())
+                .thenReturn(Map.of("users", 0L, "admins", 0L, "trips", 0L, "expenses", 0L));
+        when(adminUserService.list(any(), any())).thenReturn(Page.empty());
+        when(adminService.auditLog(any(), any())).thenReturn(Page.empty());
+        when(adminService.actorLabels(any())).thenReturn(Map.of());
+        when(opsService.current())
+                .thenReturn(new OpsSnapshot(Instant.now(), List.of(), List.of(), List.of(), false, List.of()));
+
+        mvc = MockMvcBuilders
+                .standaloneSetup(new AdminController(adminService, adminUserService),
+                        new OpsController(opsService, adminService))
+                .setViewResolvers(thymeleafViewResolver())
+                .build();
+    }
+
+    private void renders(String path) throws Exception {
+        mvc.perform(get(path))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/html"));
+    }
+
+    @Test
+    void allAdminPagesRender() throws Exception {
+        renders("/admin");
+        renders("/admin/login");
+        renders("/admin/users");
+        renders("/admin/users?q=foo&sort=email&dir=asc&size=50&page=0");
+        renders("/admin/audit");
+        renders("/admin/audit?sort=action&dir=desc&size=10");
+        renders("/admin/ops");
+        renders("/admin/ops/maven?sort=outdated&dir=desc");
+        renders("/admin/ops/pub");
+        renders("/admin/ops/alerts?q=cve");
+    }
+
+    private static ThymeleafViewResolver thymeleafViewResolver() {
+        GenericApplicationContext appContext = new GenericApplicationContext();
+        appContext.refresh();
+
+        SpringResourceTemplateResolver resolver = new SpringResourceTemplateResolver();
+        resolver.setApplicationContext(appContext);
+        resolver.setPrefix("classpath:/templates/");
+        resolver.setSuffix(".html");
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setCacheable(false);
+
+        SpringTemplateEngine engine = new SpringTemplateEngine();
+        engine.setTemplateResolver(resolver);
+
+        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
+        viewResolver.setTemplateEngine(engine);
+        viewResolver.setCharacterEncoding("UTF-8");
+        return viewResolver;
+    }
+}
