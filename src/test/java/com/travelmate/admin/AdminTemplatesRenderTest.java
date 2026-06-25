@@ -54,7 +54,7 @@ class AdminTemplatesRenderTest {
         when(adminService.actorLabels(any())).thenReturn(Map.of());
         when(opsService.current())
                 .thenReturn(new OpsSnapshot(Instant.now(), List.of(), List.of(), List.of(), false, List.of()));
-        when(notificationService.list(any())).thenReturn(Page.empty());
+        when(notificationService.list(any(), any())).thenReturn(Page.empty());
 
         TripRepository tripRepository = mock(TripRepository.class);
         TripMemberRepository tripMemberRepository = mock(TripMemberRepository.class);
@@ -70,8 +70,7 @@ class AdminTemplatesRenderTest {
         when(tripMemberRepository.findByTripId(any())).thenReturn(List.of());
         when(rateCache.current())
                 .thenReturn(new ExchangeRateCache.Snapshot("VND", Instant.now(), List.of()));
-        when(deviceRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(Page.empty());
+        when(deviceRepository.search(any(), any())).thenReturn(Page.empty());
         when(userRepository.findAllById(any())).thenReturn(List.of());
 
         mvc = MockMvcBuilders
