@@ -15,6 +15,12 @@ public interface ScheduledNotificationRepository extends JpaRepository<Scheduled
 
     Optional<ScheduledNotification> findByRid(String rid);
 
+    /** Admin search over the message text (payload holds the title/body); empty q matches all. */
+    @Query("select n from ScheduledNotification n "
+            + "where :q = '' or lower(n.payload) like lower(concat('%', :q, '%'))")
+    org.springframework.data.domain.Page<ScheduledNotification> search(
+            @Param("q") String q, org.springframework.data.domain.Pageable pageable);
+
     /** Due, undelivered notifications for the dispatch job (oldest first, capped). */
     List<ScheduledNotification> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
             NotificationStatus status, Instant cutoff, Limit limit);

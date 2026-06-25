@@ -4,8 +4,9 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('users')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('Manage', 'Users')}"></div>
+    <main class="main">
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
 
@@ -36,8 +37,10 @@
     </table>
 
     <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    </main>
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>

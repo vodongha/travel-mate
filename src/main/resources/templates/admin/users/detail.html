@@ -4,8 +4,9 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('users')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('Manage', ${u.name})}"></div>
+    <main class="main">
 
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
@@ -61,8 +62,10 @@
         </form>
       </section>
     </div>
+    </main>
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>

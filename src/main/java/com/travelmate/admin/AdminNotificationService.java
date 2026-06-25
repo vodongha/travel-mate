@@ -62,8 +62,8 @@ public class AdminNotificationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ScheduledNotification> list(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Page<ScheduledNotification> list(String q, Pageable pageable) {
+        return repository.search(q == null ? "" : q.trim(), pageable);
     }
 
     /**

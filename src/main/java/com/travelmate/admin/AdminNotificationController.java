@@ -36,15 +36,15 @@ public class AdminNotificationController {
     }
 
     @GetMapping
-    public String list(@RequestParam(required = false) String sort, @RequestParam(required = false) String dir,
-                       @RequestParam(required = false) Integer size, @RequestParam(defaultValue = "0") int page,
-                       Principal principal, Model model) {
+    public String list(@RequestParam(defaultValue = "") String q, @RequestParam(required = false) String sort,
+                       @RequestParam(required = false) String dir, @RequestParam(required = false) Integer size,
+                       @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
         int rows = DataTables.clampSize(size);
         Page<NotifRow> data = service
-                .list(DataTables.pageable(page, rows, DataTables.sort(sort, dir, SORTS, "scheduledAt")))
+                .list(q, DataTables.pageable(page, rows, DataTables.sort(sort, dir, SORTS, "scheduledAt")))
                 .map(this::toRow);
         common(principal, model);
-        model.addAttribute("table", DataTables.view("/admin/notifications", "", sort, dir, rows, data));
+        model.addAttribute("table", DataTables.view("/admin/notifications", q, sort, dir, rows, data));
         return "admin/notifications/list";
     }
 

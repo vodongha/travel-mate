@@ -4,8 +4,9 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('rates')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('System', 'Exchange rates')}"></div>
+    <main class="main">
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div class="toolbar">
@@ -28,8 +29,11 @@
       </tbody>
     </table>
 
+    </main>
+
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>

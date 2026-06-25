@@ -44,11 +44,11 @@ public class AdminDeviceController {
     }
 
     @GetMapping
-    public String list(@RequestParam(required = false) String sort, @RequestParam(required = false) String dir,
-                       @RequestParam(required = false) Integer size, @RequestParam(defaultValue = "0") int page,
-                       Principal principal, Model model) {
+    public String list(@RequestParam(defaultValue = "") String q, @RequestParam(required = false) String sort,
+                       @RequestParam(required = false) String dir, @RequestParam(required = false) Integer size,
+                       @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
         int rows = DataTables.clampSize(size);
-        Page<UserDevice> devices = deviceRepository.findAll(
+        Page<UserDevice> devices = deviceRepository.search(q,
                 DataTables.pageable(page, rows, DataTables.sort(sort, dir, SORTS, "lastSeenAt")));
         Map<Long, String> emails = userRepository
                 .findAllById(devices.getContent().stream().map(UserDevice::getUserId).toList())
@@ -58,7 +58,7 @@ public class AdminDeviceController {
                 d.getLocale() == null ? "—" : d.getLocale(), d.getLastSeenAt()));
         model.addAttribute("active", "devices");
         model.addAttribute("admin", adminName(principal));
-        model.addAttribute("table", DataTables.view("/admin/devices", "", sort, dir, rows, data));
+        model.addAttribute("table", DataTables.view("/admin/devices", q, sort, dir, rows, data));
         return "admin/devices";
     }
 

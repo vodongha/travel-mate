@@ -4,8 +4,9 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('trips')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('Manage', 'Trips')}"></div>
+    <main class="main">
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
@@ -35,8 +36,10 @@
     </table>
 
     <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    </main>
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>
