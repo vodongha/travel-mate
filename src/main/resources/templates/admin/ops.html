@@ -5,10 +5,7 @@
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
   <main class="main">
-    <div class="topbar">
-      <h1>Ops &amp; libs</h1>
-      <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
-    </div>
+    <div th:replace="~{admin/fragments :: header('System', 'Ops & libs')}"></div>
 
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
@@ -46,6 +43,7 @@
         Set <code>OPS_GITHUB_TOKEN</code> to enable Dependabot alerts.
       </p>
     </div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
   </main>
 </div>
 </body>

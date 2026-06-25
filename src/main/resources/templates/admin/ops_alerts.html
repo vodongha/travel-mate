@@ -5,10 +5,7 @@
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
   <main class="main">
-    <div class="topbar">
-      <h1>Dependabot alerts</h1>
-      <span class="who"><a th:href="@{/admin/ops}">← Ops overview</a></span>
-    </div>
+    <div th:replace="~{admin/fragments :: header('System', 'Dependabot alerts')}"></div>
 
     <p class="muted" th:unless="${configured}">
       Set <code>OPS_GITHUB_TOKEN</code> to enable Dependabot alerts.
@@ -39,6 +36,7 @@
     </table>
 
     <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
   </main>
 </div>
 </body>

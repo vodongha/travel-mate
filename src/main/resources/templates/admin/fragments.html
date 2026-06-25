@@ -11,20 +11,96 @@
   <link rel="stylesheet" th:href="@{/admin-assets/admin.css}">
 </head>
 <body>
-<!-- Left navigation. Pass the active key so the current item is highlighted. -->
+
+<!-- ── App shell ────────────────────────────────────────────────────────────────────────────── -->
+
+<!-- Left navigation: grouped, collapsible to an icon rail, and an off-canvas drawer on mobile.
+     Pass the active key to highlight the current item. -->
 <aside th:fragment="sidebar(active)" class="sidebar">
-  <div class="brand">Trippo&nbsp;Admin</div>
+  <div class="sb-head">
+    <a class="brand" th:href="@{/admin}"><span class="mark">T</span><span class="full">Trippo&nbsp;Admin</span></a>
+    <button class="icon-btn rail-toggle" type="button" data-action="rail" title="Collapse" aria-label="Collapse sidebar">‹‹</button>
+  </div>
+
   <nav class="nav">
-    <a th:href="@{/admin}" th:classappend="${active=='dashboard'}?'active'"><span class="ico">▤</span> Dashboard</a>
-    <a th:href="@{/admin/users}" th:classappend="${active=='users'}?'active'"><span class="ico">◍</span> Users</a>
-    <a th:href="@{/admin/ops}" th:classappend="${active=='ops'}?'active'"><span class="ico">⚙</span> Ops &amp; libs</a>
-    <a th:href="@{/admin/audit}" th:classappend="${active=='audit'}?'active'"><span class="ico">▦</span> Audit log</a>
+    <div class="nav-group">
+      <button class="grp-label" type="button" data-action="group">Overview</button>
+      <div class="grp-items">
+        <a th:href="@{/admin}" th:classappend="${active=='dashboard'}?'active'" title="Dashboard">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1"/><rect x="9" y="9" width="5.5" height="5.5" rx="1"/></svg><span>Dashboard</span></a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="grp-label" type="button" data-action="group">Manage</button>
+      <div class="grp-items">
+        <a th:href="@{/admin/users}" th:classappend="${active=='users'}?'active'" title="Users">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="2.6"/><path d="M1.6 14c0-2.5 2-4.2 4.4-4.2S10.4 11.5 10.4 14"/><path d="M11 3.2a2.4 2.4 0 0 1 0 4.6M11.6 9.9c1.6.4 2.9 1.9 2.9 4.1"/></svg><span>Users</span></a>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="grp-label" type="button" data-action="group">System</button>
+      <div class="grp-items">
+        <a th:href="@{/admin/ops}" th:classappend="${active=='ops'}?'active'" title="Ops &amp; libs">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.8 14 5v6L8 14.2 2 11V5z"/><path d="M2 5l6 3 6-3M8 8v6.2"/></svg><span>Ops &amp; libs</span></a>
+        <a th:href="@{/admin/audit}" th:classappend="${active=='audit'}?'active'" title="Audit log">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="1.8" width="11" height="12.4" rx="1.2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>Audit log</span></a>
+      </div>
+    </div>
   </nav>
-  <div class="spacer"></div>
-  <form th:action="@{/admin/logout}" method="post">
-    <button class="signout" type="submit">Sign out</button>
+
+  <form class="sb-foot" th:action="@{/admin/logout}" method="post">
+    <button class="signout" type="submit" title="Sign out">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2.5H3.2A1.2 1.2 0 0 0 2 3.7v8.6a1.2 1.2 0 0 0 1.2 1.2H6"/><path d="M9.5 11 13 8 9.5 5M13 8H6"/></svg><span>Sign out</span></button>
   </form>
 </aside>
+
+<!-- Top bar with the burger (mobile), breadcrumb + page title, and the signed-in admin. Carries the
+     off-canvas backdrop and the shell's small toggle script (included once per page). -->
+<div th:fragment="header(section, page)">
+  <header class="topbar">
+    <button class="icon-btn burger" type="button" data-action="drawer" aria-label="Open menu">☰</button>
+    <div class="head-titles">
+      <nav class="crumbs" aria-label="breadcrumb">
+        <a th:href="@{/admin}">Admin</a>
+        <span class="sep">›</span>
+        <th:block th:if="${section != null}"><span th:text="${section}">Section</span><span class="sep">›</span></th:block>
+        <span class="cur" th:text="${page}">Page</span>
+      </nav>
+      <h1 th:text="${page}">Page</h1>
+    </div>
+    <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
+  </header>
+  <div class="backdrop" data-action="close-drawer"></div>
+  <script th:inline="none">
+    (function () {
+      var layout = document.querySelector('.layout');
+      if (!layout) return;
+      try { if (localStorage.getItem('admin.rail') === '1') layout.classList.add('rail'); } catch (e) {}
+      document.addEventListener('click', function (ev) {
+        var el = ev.target.closest('[data-action]');
+        if (!el) return;
+        var a = el.getAttribute('data-action');
+        if (a === 'rail') {
+          layout.classList.toggle('rail');
+          try { localStorage.setItem('admin.rail', layout.classList.contains('rail') ? '1' : '0'); } catch (e) {}
+        } else if (a === 'drawer') {
+          layout.classList.toggle('drawer-open');
+        } else if (a === 'close-drawer') {
+          layout.classList.remove('drawer-open');
+        } else if (a === 'group') {
+          el.closest('.nav-group').classList.toggle('closed');
+        }
+      });
+    })();
+  </script>
+</div>
+
+<!-- Page footer. -->
+<footer th:fragment="footer" class="foot">
+  <span>Trippo Admin</span>
+  <span class="sep">·</span>
+  <a th:href="@{/admin}">trippo.io.vn/admin</a>
+</footer>
 
 <!-- ── Server-side DataTable building blocks (see com.travelmate.admin.DataTables.View) ──────── -->
 
@@ -41,10 +117,13 @@
   <button class="primary" type="submit">Search</button>
 </form>
 
-<!-- A sortable column header: clicking re-sorts server-side (toggling asc/desc) and resets to page 0. -->
-<th th:fragment="dtSortTh(view, label, key)" class="dt-sortable">
+<!-- A sortable column header: clicking re-sorts server-side (toggling asc/desc) and resets to page 0.
+     The active column shows ▲/▼; the others show a faint ⇅ so it's clear they're sortable. -->
+<th th:fragment="dtSortTh(view, label, key)" class="dt-sortable"
+    th:classappend="${view.sort == key} ? 'on'">
   <a th:href="@{${view.baseUrl}(q=${view.q}, size=${view.size}, sort=${key}, dir=${view.nextDir(key)}, page=0)}">
-    <span th:text="${label}">Column</span><span class="dt-arrow" th:text="${view.arrow(key)}"></span>
+    <span th:text="${label}">Column</span>
+    <span class="dt-arrow" th:text="${view.sort == key} ? ${view.arrow(key)} : '⇅'">⇅</span>
   </a>
 </th>
 
