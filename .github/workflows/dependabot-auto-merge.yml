@@ -1,0 +1,44 @@
+name: Dependabot auto-merge
+
+# Auto-merge Dependabot PRs once CI is green. Keyed off the CI workflow *completing successfully*
+# (workflow_run), so a PR is only ever merged after `mvn verify` (Oracle IT) has passed — never
+# before. Runs in the trusted base-repo context.
+#
+# Dependabot targets `develop` (master is release-only), so the merge lands on develop and the
+# bumps ride the next develop -> master release — it does NOT auto-deploy. The merge uses GH_PAT
+# rather than GITHUB_TOKEN so the merge push still triggers the follow-up CI run on develop.
+# (Set the GH_PAT repo secret to a PAT with `repo` + `workflow`.)
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    # Only act when CI passed on a Dependabot pull request.
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    steps:
+      - name: Merge the green Dependabot PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_TOKEN: ${{ secrets.GH_PAT }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          number=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open \
+            --json number --jq '.[0].number')
+          if [ -z "$number" ]; then
+            echo "No open PR for $BRANCH — nothing to merge."
+            exit 0
+          fi
+          echo "CI passed for $BRANCH — merging PR #$number."
+          GH_TOKEN="$MERGE_TOKEN" gh pr merge "$number" --repo "$REPO" --merge --delete-branch
