@@ -103,6 +103,32 @@ class TicketIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void editKeepingSameMembers_doesNotViolateUniqueConstraint() {
+        String owner = registerToken("tk-owner7@example.com");
+        String tripRid = createTrip(owner, "Da Nang");
+        String ownerMember = ownerMemberRid(tripRid, owner);
+        String lan = addGhost(tripRid, owner, "Lan");
+
+        String rid = post("/api/v1/trips/" + tripRid + "/tickets", Map.of(
+                "memberRids", java.util.List.of(ownerMember), "title", "My pass",
+                "ticketType", "SIGHTSEEING", "qrData", "QR-1"), owner)
+                .getBody().get("data").get("rid").asText();
+
+        // Editing while re-sending the same member used to hit ORA-00001 on UK_TICKET_MEMBERS
+        // (insert flushed before the delete). It must now succeed.
+        ResponseEntity<JsonNode> kept = patch("/api/v1/trips/" + tripRid + "/tickets/" + rid,
+                Map.of("title", "My pass v2", "memberRids", java.util.List.of(ownerMember)), owner);
+        assertThat(kept.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(kept.getBody().get("data").get("title").asText()).isEqualTo("My pass v2");
+        assertThat(kept.getBody().get("data").get("memberRids").size()).isEqualTo(1);
+
+        // Re-assigning to a different set (keeping one, adding one) also round-trips.
+        JsonNode changed = patch("/api/v1/trips/" + tripRid + "/tickets/" + rid,
+                Map.of("memberRids", java.util.List.of(ownerMember, lan)), owner).getBody().get("data");
+        assertThat(changed.get("memberRids").size()).isEqualTo(2);
+    }
+
+    @Test
     void viewer_cannotCreateGroupTicket() {
         String owner = registerToken("tk-owner5@example.com");
         String tripRid = createTrip(owner, "Sapa");
@@ -174,6 +200,10 @@ class TicketIT extends AbstractIntegrationTest {
         HttpHeaders h = new HttpHeaders();
         h.setBearerAuth(token);
         return rest.exchange(path, HttpMethod.GET, new HttpEntity<>(h), JsonNode.class);
+    }
+
+    private ResponseEntity<JsonNode> patch(String path, Map<String, ?> body, String token) {
+        return rest.exchange(path, HttpMethod.PATCH, new HttpEntity<>(body, jsonAuth(token)), JsonNode.class);
     }
 
     private static HttpHeaders jsonAuth(String token) {
