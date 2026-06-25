@@ -5,10 +5,7 @@
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('ops')}"></div>
   <main class="main">
-    <div class="topbar">
-      <h1 th:text="${title}">Dependencies</h1>
-      <span class="who"><a th:href="@{/admin/ops}">← Ops overview</a></span>
-    </div>
+    <div th:replace="~{admin/fragments :: header('System', ${title})}"></div>
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
 
@@ -39,6 +36,7 @@
     </table>
 
     <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
   </main>
 </div>
 </body>

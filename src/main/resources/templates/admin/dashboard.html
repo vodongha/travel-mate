@@ -5,10 +5,7 @@
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('dashboard')}"></div>
   <main class="main">
-    <div class="topbar">
-      <h1>Dashboard</h1>
-      <span class="who">Signed in as <strong th:text="${admin}">admin</strong></span>
-    </div>
+    <div th:replace="~{admin/fragments :: header(null, 'Dashboard')}"></div>
     <div class="cards">
       <div class="card">
         <div class="label">Users</div>
@@ -27,6 +24,7 @@
         <div class="value" th:text="${counts.expenses}">0</div>
       </div>
     </div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
   </main>
 </div>
 </body>
