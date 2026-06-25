@@ -3,6 +3,12 @@ package com.travelmate.admin;
 import com.travelmate.admin.ops.OpsController;
 import com.travelmate.admin.ops.OpsService;
 import com.travelmate.admin.ops.OpsService.OpsSnapshot;
+import com.travelmate.common.money.ExchangeRateCache;
+import com.travelmate.trip.Trip;
+import com.travelmate.trip.TripMemberRepository;
+import com.travelmate.trip.TripRepository;
+import com.travelmate.user.UserDeviceRepository;
+import com.travelmate.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.support.GenericApplicationContext;
@@ -50,11 +56,32 @@ class AdminTemplatesRenderTest {
                 .thenReturn(new OpsSnapshot(Instant.now(), List.of(), List.of(), List.of(), false, List.of()));
         when(notificationService.list(any())).thenReturn(Page.empty());
 
+        TripRepository tripRepository = mock(TripRepository.class);
+        TripMemberRepository tripMemberRepository = mock(TripMemberRepository.class);
+        ExchangeRateCache rateCache = mock(ExchangeRateCache.class);
+        UserDeviceRepository deviceRepository = mock(UserDeviceRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+
+        when(tripRepository.search(any(), any())).thenReturn(Page.empty());
+        Trip trip = new Trip();
+        trip.setName("Kyoto");
+        trip.setBaseCurrency("VND");
+        when(tripRepository.findByRid(any())).thenReturn(java.util.Optional.of(trip));
+        when(tripMemberRepository.findByTripId(any())).thenReturn(List.of());
+        when(rateCache.current())
+                .thenReturn(new ExchangeRateCache.Snapshot("VND", Instant.now(), List.of()));
+        when(deviceRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .thenReturn(Page.empty());
+        when(userRepository.findAllById(any())).thenReturn(List.of());
+
         mvc = MockMvcBuilders
                 .standaloneSetup(new AdminController(adminService, adminUserService),
                         new OpsController(opsService, adminService),
                         new AdminNotificationController(notificationService, adminService,
-                                new com.fasterxml.jackson.databind.ObjectMapper()))
+                                new com.fasterxml.jackson.databind.ObjectMapper()),
+                        new AdminTripController(tripRepository, tripMemberRepository, adminService),
+                        new AdminRatesController(rateCache, adminService),
+                        new AdminDeviceController(deviceRepository, userRepository, adminService))
                 .setViewResolvers(thymeleafViewResolver())
                 .build();
     }
@@ -80,6 +107,12 @@ class AdminTemplatesRenderTest {
         renders("/admin/notifications");
         renders("/admin/notifications?sort=status&dir=asc&size=10");
         renders("/admin/notifications/new");
+        renders("/admin/trips");
+        renders("/admin/trips?q=kyoto&sort=name&dir=asc");
+        renders("/admin/trips/some-rid");
+        renders("/admin/rates");
+        renders("/admin/devices");
+        renders("/admin/devices?sort=platform&dir=asc&size=50");
     }
 
     private static ThymeleafViewResolver thymeleafViewResolver() {
