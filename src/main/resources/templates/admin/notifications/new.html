@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Compose notification')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('notifications')}"></div>
+  <main class="main">
+    <div th:replace="~{admin/fragments :: header('System', 'Compose notification')}"></div>
+
+    <div class="panel" style="max-width:560px">
+      <h2>Push a notification now</h2>
+      <form th:action="@{/admin/notifications/send}" method="post">
+        <label>Send to
+          <select name="target">
+            <option value="TRIP">Everyone on a trip (trip id)</option>
+            <option value="USER">A single user (email)</option>
+          </select>
+        </label>
+        <label>Trip id or user email
+          <input type="text" name="identifier" required placeholder="trip rid or user@email">
+        </label>
+        <label>Title
+          <input type="text" name="title" required maxlength="120" placeholder="Notification title">
+        </label>
+        <label>Body
+          <textarea name="body" rows="3" maxlength="500" placeholder="Message body"></textarea>
+        </label>
+        <label>Deeplink (optional)
+          <input type="text" name="deeplink" placeholder="/trips/&lt;rid&gt;/settlement">
+        </label>
+        <div class="toolbar" style="margin-top:6px">
+          <a class="btn" th:href="@{/admin/notifications}">Cancel</a>
+          <div style="flex:1"></div>
+          <button class="btn brand" type="submit">Push now</button>
+        </div>
+      </form>
+    </div>
+
+    <div th:replace="~{admin/fragments :: footer}"></div>
+  </main>
+</div>
+</body>
+</html>

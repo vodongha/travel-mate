@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Trips')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('trips')}"></div>
+  <main class="main">
+    <div th:replace="~{admin/fragments :: header('Manage', 'Trips')}"></div>
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Name', 'name')}"></th>
+          <th>Destination</th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Start', 'startDate')}"></th>
+          <th>End</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="t : ${table.page.content}">
+          <td><a th:href="@{/admin/trips/{rid}(rid=${t.rid})}" th:text="${t.name}">Trip</a></td>
+          <td th:text="${t.destination} ?: '—'">—</td>
+          <td th:text="${t.startDate} ?: '—'">—</td>
+          <td th:text="${t.endDate} ?: '—'">—</td>
+          <td><span class="badge" th:text="${t.tripType}">OTHER</span></td>
+        </tr>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="5" class="muted">No trips match.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
+  </main>
+</div>
+</body>
+</html>

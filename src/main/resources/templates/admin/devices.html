@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Devices')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('devices')}"></div>
+  <main class="main">
+    <div th:replace="~{admin/fragments :: header('System', 'Devices')}"></div>
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Platform', 'platform')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Language', 'locale')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Last seen', 'lastSeenAt')}"></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="d : ${table.page.content}">
+          <td th:text="${d.user}">u@x.com</td>
+          <td><span class="badge" th:text="${d.platform}">ANDROID</span></td>
+          <td th:text="${d.locale}">vi</td>
+          <td th:text="${d.lastSeenAt}">—</td>
+          <td>
+            <form th:action="@{/admin/devices/{rid}/delete(rid=${d.rid})}" method="post"
+                  onsubmit="return confirm('Remove this device?');">
+              <button class="btn danger" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="5" class="muted">No devices registered.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
+  </main>
+</div>
+</body>
+</html>

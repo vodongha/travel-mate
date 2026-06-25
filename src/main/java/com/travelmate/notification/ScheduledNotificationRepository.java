@@ -9,8 +9,11 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface ScheduledNotificationRepository extends JpaRepository<ScheduledNotification, Long> {
+
+    Optional<ScheduledNotification> findByRid(String rid);
 
     /** Due, undelivered notifications for the dispatch job (oldest first, capped). */
     List<ScheduledNotification> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(

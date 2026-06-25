@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Exchange rates')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('rates')}"></div>
+  <main class="main">
+    <div th:replace="~{admin/fragments :: header('System', 'Exchange rates')}"></div>
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <div class="toolbar">
+      <span class="muted">Base <strong th:text="${snapshot.baseCurrency()}">VND</strong>
+        · updated <span th:text="${snapshot.updatedAt()}">—</span></span>
+      <div style="flex:1"></div>
+      <form method="post" th:action="@{/admin/rates/refresh}">
+        <button class="btn brand" type="submit">Refresh now</button>
+      </form>
+    </div>
+
+    <table>
+      <thead><tr><th>Currency</th><th>Rate to base</th></tr></thead>
+      <tbody>
+        <tr th:each="r : ${snapshot.rates()}">
+          <td th:text="${r.currency()}">USD</td>
+          <td th:text="${r.rateToBase()}">25000</td>
+        </tr>
+        <tr th:if="${snapshot.rates().isEmpty()}"><td colspan="2" class="muted">No rates — try a refresh.</td></tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: footer}"></div>
+  </main>
+</div>
+</body>
+</html>
