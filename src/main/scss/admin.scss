@@ -1,55 +1,66 @@
 // Trippo admin panel styles. Compiled to static/admin-assets/admin.css by the dart-sass Maven
-// plugin and linked from the Thymeleaf templates. Keep it self-contained (no external CSS).
+// plugin and linked from the Thymeleaf templates. Self-contained (no external CSS).
 
 // ── tokens ──────────────────────────────────────────────────────────────────
-$bg:          #f7f8fb;
+$bg:          #f6f7fb;
 $surface:     #ffffff;
-$line:        #e6e8ef;
-$text:        #1b1c22;
+$line:        #e7e9f0;
+$line-soft:   #f0f1f6;
+$text:        #14151c;
 $muted:       #6b6f7d;
-$brand:       #4f46e5; // matches the app's brand indigo
+$muted-2:     #9aa0ad;
+$brand:       #4f46e5;
 $brand-weak:  #eef0ff;
+$brand-ink:   #3a32b8;
 $danger:      #d92d20;
+$danger-weak: #fef3f2;
 $ok:          #067647;
+$ok-weak:     #ecfdf3;
 $radius:      14px;
+$radius-sm:   10px;
 $font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-$rail-w: 64px;
-$side-w: 240px;
-$breakpoint-narrow: 820px;
+$rail-w: 68px;
+$side-w: 248px;
+$head-h: 64px;
+$breakpoint-narrow: 860px;
 
-// ── base ────────────────────────────────────────────────────────────────────
+// ── base ──────────────────────────────────────────────────────────────────--
 :root { font-family: $font; }
 * { box-sizing: border-box; }
+html, body { height: 100%; }
 
 body {
   margin: 0;
   background: $bg;
   color: $text;
-  font-size: 15px;
+  font-size: 14.5px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 a { color: $brand; text-decoration: none; }
 
-// ── app shell ───────────────────────────────────────────────────────────────
-.layout { display: flex; min-height: 100vh; }
+// ── app shell: sidebar | (fixed header + scrolling main + fixed footer) ───────
+.layout { display: flex; height: 100vh; overflow: hidden; }
 
 .icon-btn {
   border: 1px solid $line;
   background: $surface;
   color: $muted;
-  border-radius: 9px;
-  width: 34px;
-  height: 34px;
+  border-radius: $radius-sm;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
 
-  &:hover { background: $bg; }
+  &:hover { background: $bg; color: $text; }
 }
 
+// ── sidebar ───────────────────────────────────────────────────────────────--
 .sidebar {
   width: $side-w;
   flex-shrink: 0;
@@ -57,8 +68,6 @@ a { color: $brand; text-decoration: none; }
   border-right: 1px solid $line;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 0;
   height: 100vh;
   transition: width .15s ease;
 
@@ -66,7 +75,9 @@ a { color: $brand; text-decoration: none; }
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 16px 14px;
+    height: $head-h;
+    padding: 0 16px;
+    border-bottom: 1px solid $line-soft;
   }
 
   .brand {
@@ -76,8 +87,9 @@ a { color: $brand; text-decoration: none; }
     flex: 1;
     min-width: 0;
     font-weight: 800;
-    font-size: 18px;
-    color: $brand;
+    font-size: 17px;
+    color: $text;
+    white-space: nowrap;
 
     .mark {
       width: 30px;
@@ -89,7 +101,8 @@ a { color: $brand; text-decoration: none; }
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 15px;
+      font-weight: 800;
     }
   }
 }
@@ -97,44 +110,46 @@ a { color: $brand; text-decoration: none; }
 .nav {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 10px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 
   a {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 10px;
-    border-radius: 10px;
-    color: $text;
+    gap: 11px;
+    padding: 9px 11px;
+    border-radius: $radius-sm;
+    color: $muted;
     font-weight: 600;
     font-size: 14px;
 
-    svg { width: 18px; height: 18px; flex-shrink: 0; }
-    &:hover { background: $bg; }
-    &.active { background: $brand-weak; color: $brand; }
+    svg { width: 18px; height: 18px; flex-shrink: 0; color: $muted-2; }
+    &:hover { background: $bg; color: $text; svg { color: $muted; } }
+    &.active { background: $brand-weak; color: $brand-ink; svg { color: $brand; } }
   }
 }
 
 .nav-group {
+  margin-top: 6px;
+
   .grp-label {
     width: 100%;
     display: flex;
     align-items: center;
-    padding: 8px 10px 4px;
+    padding: 6px 11px 4px;
     background: none;
     border: none;
-    color: $muted;
+    color: $muted-2;
     font: inherit;
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     text-transform: uppercase;
-    letter-spacing: .04em;
+    letter-spacing: .06em;
     cursor: pointer;
 
-    &::after { content: '▾'; margin-left: auto; font-size: 10px; transition: transform .15s; }
+    &::after { content: '⌄'; margin-left: auto; font-size: 13px; line-height: 1; transition: transform .15s; }
   }
 
   &.closed {
@@ -145,52 +160,52 @@ a { color: $brand; text-decoration: none; }
 
 .grp-items { display: flex; flex-direction: column; gap: 2px; }
 
-.sb-foot { padding: 12px 10px; border-top: 1px solid $line; }
+.sb-foot { padding: 12px; border-top: 1px solid $line-soft; }
 
 .signout {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
   border: 1px solid $line;
   background: $surface;
   color: $muted;
-  border-radius: 10px;
-  padding: 9px 10px;
+  border-radius: $radius-sm;
+  padding: 9px 11px;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 
   svg { width: 18px; height: 18px; }
-  &:hover { background: $bg; }
+  &:hover { background: $danger-weak; color: $danger; border-color: transparent; }
 }
 
-// Collapsed icon rail.
+// collapsed icon rail
 .layout.rail {
   .sidebar { width: $rail-w; }
-  .brand .full,
-  .nav a span,
-  .nav-group .grp-label,
-  .signout span { display: none; }
-  .nav a, .signout { justify-content: center; }
+  .brand .full, .nav a span, .nav-group .grp-label, .signout span { display: none; }
+  .nav a, .signout { justify-content: center; gap: 0; }
+  .sb-head { justify-content: center; padding: 0; }
   .rail-toggle { transform: rotate(180deg); }
 }
 
-// ── main column: header (breadcrumb + title), content, footer ─────────────────
-.main {
+// ── content column ────────────────────────────────────────────────────────--
+.content {
   flex: 1;
   min-width: 0;
-  padding: 24px;
-  width: 100%;
-  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 .topbar {
+  flex-shrink: 0;
+  height: $head-h;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding-bottom: 16px;
-  margin-bottom: 20px;
+  padding: 0 28px;
+  background: $surface;
   border-bottom: 1px solid $line;
 }
 
@@ -199,45 +214,66 @@ a { color: $brand; text-decoration: none; }
 .head-titles {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
+  gap: 1px;
   min-width: 0;
 
-  h1 { font-size: 22px; font-weight: 800; margin: 0; }
+  h1 { font-size: 19px; font-weight: 800; margin: 0; letter-spacing: -.2px; }
 }
 
 .crumbs {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
-  color: $muted;
+  font-size: 11.5px;
+  color: $muted-2;
+  font-weight: 600;
 
-  a:hover { color: $brand; }
-  .sep { opacity: .5; }
-  .cur { color: $text; font-weight: 600; }
+  a { color: $muted-2; &:hover { color: $brand; } }
+  .sep { opacity: .6; }
+  .cur { color: $muted; }
 }
 
-.topbar .who { margin-left: auto; color: $muted; font-size: 14px; white-space: nowrap; }
-
-.foot {
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid $line;
+.topbar .who {
+  margin-left: auto;
   color: $muted;
   font-size: 13px;
+  white-space: nowrap;
+  background: $bg;
+  border: 1px solid $line-soft;
+  padding: 7px 12px;
+  border-radius: 999px;
+
+  strong { color: $text; font-weight: 700; }
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 24px 28px;
+}
+
+.foot {
+  flex-shrink: 0;
   display: flex;
   gap: 8px;
   align-items: center;
+  padding: 12px 28px;
+  background: $surface;
+  border-top: 1px solid $line;
+  color: $muted-2;
+  font-size: 12.5px;
 
-  .sep { opacity: .5; }
+  .sep { opacity: .6; }
 }
 
 .backdrop { display: none; }
 
-// ── cards & tables ──────────────────────────────────────────────────────────
+// ── cards ─────────────────────────────────────────────────────────────────--
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 16px;
 }
 
@@ -246,47 +282,61 @@ a { color: $brand; text-decoration: none; }
   border: 1px solid $line;
   border-radius: $radius;
   padding: 18px 20px;
+  transition: border-color .12s, box-shadow .12s;
 
-  .label { color: $muted; font-size: 13px; font-weight: 600; }
-  .value { font-size: 30px; font-weight: 800; margin-top: 6px; }
+  .label { color: $muted; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .value { font-size: 30px; font-weight: 800; margin-top: 8px; letter-spacing: -.5px; }
 }
 
 a.card {
   display: block;
-  text-decoration: none;
   color: inherit;
 
-  &:hover { border-color: $brand; }
+  &:hover { border-color: $brand; box-shadow: 0 1px 0 $brand-weak; }
 }
 
+// ── tables ─────────────────────────────────────────────────────────────────-
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: $surface;
   border: 1px solid $line;
   border-radius: $radius;
   overflow: hidden;
 
-  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid $line; font-size: 14px; }
-  th { background: $bg; color: $muted; font-weight: 700; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid $line-soft; font-size: 13.5px; vertical-align: middle; }
+  thead th {
+    background: $bg;
+    color: $muted;
+    font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-bottom: 1px solid $line;
+  }
+  tbody tr:hover td { background: #fbfbfe; }
   tr:last-child td { border-bottom: none; }
+  a { font-weight: 600; }
 }
 
-// ── server-side data table controls ──────────────────────────────────────────
+// ── server-side data table controls (identical on every table) ───────────────
 .toolbar {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 
-  input { flex: 1; }
-  button.primary { width: auto; padding: 11px 18px; }
+  input[type="search"], input[type="text"] { flex: 1; min-width: 200px; }
+  .primary { width: auto; padding: 10px 18px; }
 }
 
 .dt-size {
   flex: 0 0 auto;
   padding: 10px 12px;
   border: 1px solid $line;
-  border-radius: 10px;
+  border-radius: $radius-sm;
   font: inherit;
   background: $surface;
   color: $text;
@@ -300,16 +350,19 @@ th.dt-sortable {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 11px 14px;
+    padding: 12px 16px;
     color: $muted;
     font-weight: 700;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
 
     &:hover { color: $brand; }
   }
 
-  .dt-arrow { font-size: 11px; opacity: .35; }   // faint ⇅ on inactive columns
-  &.on a { color: $text; }
-  &.on .dt-arrow { opacity: 1; color: $brand; }   // solid ▲/▼ on the active column
+  .dt-arrow { font-size: 10px; opacity: .35; }
+  &.on a { color: $brand; }
+  &.on .dt-arrow { opacity: 1; }
 }
 
 .pager {
@@ -318,39 +371,40 @@ th.dt-sortable {
   gap: 16px;
   margin-top: 16px;
   color: $muted;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
-// ── flash messages ──────────────────────────────────────────────────────────
+// ── flash ──────────────────────────────────────────────────────────────────-
 .flash {
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 14px;
+  padding: 11px 15px;
+  border-radius: $radius-sm;
+  font-size: 13.5px;
   font-weight: 600;
-  margin: 0 0 14px;
+  margin: 0 0 16px;
+  border: 1px solid transparent;
 
-  &.ok { background: #ecfdf3; color: $ok; }
-  &.error { background: #fef3f2; color: $danger; }
+  &.ok { background: $ok-weak; color: $ok; border-color: #abefc6; }
+  &.error { background: $danger-weak; color: $danger; border-color: #fecdca; }
 }
 
-// ── badges ──────────────────────────────────────────────────────────────────
+// ── badges ─────────────────────────────────────────────────────────────────-
 .badge {
   display: inline-block;
-  padding: 2px 9px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   background: $bg;
   color: $muted;
   border: 1px solid $line;
 
-  &.brand { background: $brand-weak; color: $brand; border-color: transparent; }
-  &.danger { background: #fef3f2; color: $danger; border-color: transparent; }
+  &.brand { background: $brand-weak; color: $brand-ink; border-color: transparent; }
+  &.danger { background: $danger-weak; color: $danger; border-color: transparent; }
   & + & { margin-left: 6px; }
 }
 
-// ── detail page ──────────────────────────────────────────────────────────────
+// ── detail / panels / forms ───────────────────────────────────────────────--
 .detail-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -361,40 +415,45 @@ th.dt-sortable {
   background: $surface;
   border: 1px solid $line;
   border-radius: $radius;
-  padding: 20px 22px;
+  padding: 22px 24px;
 
-  h2 { font-size: 16px; margin: 0 0 14px; }
-  form { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
-  hr { border: none; border-top: 1px solid $line; margin: 18px 0; }
+  h2 { font-size: 15px; margin: 0 0 16px; font-weight: 800; }
+  form { display: flex; flex-direction: column; gap: 13px; margin-top: 4px; }
+  hr { border: none; border-top: 1px solid $line-soft; margin: 20px 0; }
 }
 
 .kv {
   display: grid;
   grid-template-columns: 130px 1fr;
-  gap: 6px 12px;
+  gap: 8px 12px;
   margin: 0 0 18px;
 
-  dt { color: $muted; font-size: 13px; font-weight: 600; }
-  dd { margin: 0; font-size: 14px; word-break: break-all; }
+  dt { color: $muted; font-size: 12.5px; font-weight: 600; }
+  dd { margin: 0; font-size: 13.5px; word-break: break-all; }
 }
 
 .btn {
   border: 1px solid $line;
   background: $surface;
   color: $text;
-  border-radius: 10px;
-  padding: 11px 14px;
+  border-radius: $radius-sm;
+  padding: 10px 15px;
   font: inherit;
   font-weight: 700;
+  font-size: 13.5px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 
-  &:hover { filter: brightness(0.98); background: $bg; }
+  &:hover { background: $bg; }
   &:disabled { opacity: .5; cursor: not-allowed; }
-  &.brand { background: $brand; color: #fff; border-color: transparent; }
-  &.danger { background: $danger; color: #fff; border-color: transparent; }
+  &.brand { background: $brand; color: #fff; border-color: transparent; &:hover { background: $brand-ink; } }
+  &.danger { background: $surface; color: $danger; border-color: #fecdca; &:hover { background: $danger-weak; } }
 }
 
 .muted { color: $muted; }
+code { background: $bg; border: 1px solid $line-soft; padding: 1px 6px; border-radius: 6px; font-size: 12.5px; }
 
 // ── login ─────────────────────────────────────────────────────────────────--
 .login-body {
@@ -409,21 +468,22 @@ th.dt-sortable {
   background: $surface;
   border: 1px solid $line;
   border-radius: 18px;
-  padding: 28px;
+  padding: 30px;
   width: 100%;
-  max-width: 360px;
+  max-width: 370px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  box-shadow: 0 8px 30px rgba(20, 21, 28, .06);
 
-  h1 { font-size: 20px; text-align: center; }
+  h1 { font-size: 20px; text-align: center; margin: 0 0 4px; }
 }
 
 label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   color: $muted;
 }
@@ -431,46 +491,48 @@ label {
 input, select, textarea {
   padding: 11px 12px;
   border: 1px solid $line;
-  border-radius: 10px;
+  border-radius: $radius-sm;
   font: inherit;
-  font-size: 15px;
+  font-size: 14.5px;
   color: $text;
   background: $surface;
+  width: 100%;
 
-  &:focus { outline: none; border-color: $brand; }
+  &:focus { outline: none; border-color: $brand; box-shadow: 0 0 0 3px $brand-weak; }
 }
 
 button.primary {
   background: $brand;
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: $radius-sm;
+  padding: 11px 14px;
   font: inherit;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 14.5px;
   cursor: pointer;
 
-  &:hover { filter: brightness(1.05); }
+  &:hover { background: $brand-ink; }
 }
 
-// ── responsive: off-canvas drawer ─────────────────────────────────────────────
+// ── responsive: off-canvas drawer ─────────────────────────────────────────--
 @media (max-width: $breakpoint-narrow) {
   .sidebar {
     position: fixed;
-    left: 0;
-    top: 0;
+    left: 0; top: 0;
     z-index: 30;
     transform: translateX(-100%);
     transition: transform .2s ease;
   }
   .layout.drawer-open .sidebar { transform: none; }
-  .layout.rail .sidebar { width: $side-w; } // never rail on mobile; it's a drawer
+  .layout.rail .sidebar { width: $side-w; }
 
-  .backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .4); z-index: 20; }
+  .backdrop { position: fixed; inset: 0; background: rgba(20, 21, 28, .45); z-index: 20; }
   .layout.drawer-open .backdrop { display: block; }
 
   .burger { display: inline-flex; }
   .rail-toggle { display: none; }
+  .topbar { padding: 0 16px; }
   .main { padding: 18px 16px; }
+  .foot { padding: 12px 16px; }
 }

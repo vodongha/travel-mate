@@ -4,15 +4,16 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('notifications')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('System', 'Notifications')}"></div>
+    <main class="main">
 
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
-    <div class="toolbar">
-      <div style="flex:1"></div>
+    <div class="toolbar" style="justify-content:flex-end">
       <a class="btn brand" th:href="@{/admin/notifications/new}">Compose &amp; push</a>
     </div>
+    <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
 
     <table>
       <thead>
@@ -48,8 +49,10 @@
     </table>
 
     <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    </main>
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>

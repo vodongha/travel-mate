@@ -4,8 +4,9 @@
 <body>
 <div class="layout">
   <div th:replace="~{admin/fragments :: sidebar('notifications')}"></div>
-  <main class="main">
+  <div class="content">
     <div th:replace="~{admin/fragments :: header('System', 'Compose notification')}"></div>
+    <main class="main">
 
     <div class="panel" style="max-width:560px">
       <h2>Push a notification now</h2>
@@ -36,8 +37,11 @@
       </form>
     </div>
 
+    </main>
+
+
     <div th:replace="~{admin/fragments :: footer}"></div>
-  </main>
+  </div>
 </div>
 </body>
 </html>
