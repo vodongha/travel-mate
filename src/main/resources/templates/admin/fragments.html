@@ -35,6 +35,8 @@
       <div class="grp-items">
         <a th:href="@{/admin/users}" th:classappend="${active=='users'}?'active'" title="Users">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="2.6"/><path d="M1.6 14c0-2.5 2-4.2 4.4-4.2S10.4 11.5 10.4 14"/><path d="M11 3.2a2.4 2.4 0 0 1 0 4.6M11.6 9.9c1.6.4 2.9 1.9 2.9 4.1"/></svg><span>Users</span></a>
+        <a th:href="@{/admin/trips}" th:classappend="${active=='trips'}?'active'" title="Trips">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6.5 8 2l5 4.5"/><path d="M4 6v8h8V6"/><path d="M6.5 14V9.5h3V14"/></svg><span>Trips</span></a>
       </div>
     </div>
     <div class="nav-group">
@@ -44,6 +46,10 @@
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.8 14 5v6L8 14.2 2 11V5z"/><path d="M2 5l6 3 6-3M8 8v6.2"/></svg><span>Ops &amp; libs</span></a>
         <a th:href="@{/admin/notifications}" th:classappend="${active=='notifications'}?'active'" title="Notifications">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.6a3.6 3.6 0 0 0-3.6 3.6c0 3-1.2 4-1.8 4.6h10.8c-.6-.6-1.8-1.6-1.8-4.6A3.6 3.6 0 0 0 8 1.6z"/><path d="M6.4 12.4a1.6 1.6 0 0 0 3.2 0"/></svg><span>Notifications</span></a>
+        <a th:href="@{/admin/rates}" th:classappend="${active=='rates'}?'active'" title="Exchange rates">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 5.5h9l-2-2M13.5 10.5h-9l2 2"/></svg><span>Exchange rates</span></a>
+        <a th:href="@{/admin/devices}" th:classappend="${active=='devices'}?'active'" title="Devices">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="1.5" width="8" height="13" rx="1.4"/><path d="M6.8 12.5h2.4"/></svg><span>Devices</span></a>
         <a th:href="@{/admin/audit}" th:classappend="${active=='audit'}?'active'" title="Audit log">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="1.8" width="11" height="12.4" rx="1.2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>Audit log</span></a>
       </div>
