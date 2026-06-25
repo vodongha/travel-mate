@@ -129,6 +129,10 @@ public class TicketService {
         if (memberIds != null) {
             requireCanAssign(ctx, memberIds);
             ticketMemberRepository.deleteByTicketId(ticket.getId());
+            // Force the deletes to hit the DB before the re-inserts: Hibernate otherwise orders
+            // inserts before deletes at flush, so re-assigning the same member would collide with
+            // the still-present row on UK_TICKET_MEMBERS (ORA-00001).
+            ticketMemberRepository.flush();
             saveMembers(ticket.getId(), memberIds);
         }
 
