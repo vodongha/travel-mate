@@ -42,6 +42,8 @@
       <div class="grp-items">
         <a th:href="@{/admin/ops}" th:classappend="${active=='ops'}?'active'" title="Ops &amp; libs">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.8 14 5v6L8 14.2 2 11V5z"/><path d="M2 5l6 3 6-3M8 8v6.2"/></svg><span>Ops &amp; libs</span></a>
+        <a th:href="@{/admin/notifications}" th:classappend="${active=='notifications'}?'active'" title="Notifications">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.6a3.6 3.6 0 0 0-3.6 3.6c0 3-1.2 4-1.8 4.6h10.8c-.6-.6-1.8-1.6-1.8-4.6A3.6 3.6 0 0 0 8 1.6z"/><path d="M6.4 12.4a1.6 1.6 0 0 0 3.2 0"/></svg><span>Notifications</span></a>
         <a th:href="@{/admin/audit}" th:classappend="${active=='audit'}?'active'" title="Audit log">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="1.8" width="11" height="12.4" rx="1.2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg><span>Audit log</span></a>
       </div>

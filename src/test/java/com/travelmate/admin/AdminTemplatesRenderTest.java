@@ -39,6 +39,7 @@ class AdminTemplatesRenderTest {
         AdminService adminService = mock(AdminService.class);
         AdminUserService adminUserService = mock(AdminUserService.class);
         OpsService opsService = mock(OpsService.class);
+        AdminNotificationService notificationService = mock(AdminNotificationService.class);
 
         when(adminService.dashboardCounts())
                 .thenReturn(Map.of("users", 0L, "admins", 0L, "trips", 0L, "expenses", 0L));
@@ -47,10 +48,13 @@ class AdminTemplatesRenderTest {
         when(adminService.actorLabels(any())).thenReturn(Map.of());
         when(opsService.current())
                 .thenReturn(new OpsSnapshot(Instant.now(), List.of(), List.of(), List.of(), false, List.of()));
+        when(notificationService.list(any())).thenReturn(Page.empty());
 
         mvc = MockMvcBuilders
                 .standaloneSetup(new AdminController(adminService, adminUserService),
-                        new OpsController(opsService, adminService))
+                        new OpsController(opsService, adminService),
+                        new AdminNotificationController(notificationService, adminService,
+                                new com.fasterxml.jackson.databind.ObjectMapper()))
                 .setViewResolvers(thymeleafViewResolver())
                 .build();
     }
@@ -73,6 +77,9 @@ class AdminTemplatesRenderTest {
         renders("/admin/ops/maven?sort=outdated&dir=desc");
         renders("/admin/ops/pub");
         renders("/admin/ops/alerts?q=cve");
+        renders("/admin/notifications");
+        renders("/admin/notifications?sort=status&dir=asc&size=10");
+        renders("/admin/notifications/new");
     }
 
     private static ThymeleafViewResolver thymeleafViewResolver() {

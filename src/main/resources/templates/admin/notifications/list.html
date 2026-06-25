@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments :: head('Notifications')}"></head>
+<body>
+<div class="layout">
+  <div th:replace="~{admin/fragments :: sidebar('notifications')}"></div>
+  <main class="main">
+    <div th:replace="~{admin/fragments :: header('System', 'Notifications')}"></div>
+
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
+    <div class="toolbar">
+      <div style="flex:1"></div>
+      <a class="btn brand" th:href="@{/admin/notifications/new}">Compose &amp; push</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Scheduled', 'scheduledAt')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Type', 'type')}"></th>
+          <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Status', 'status')}"></th>
+          <th>Target</th>
+          <th>Title</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="n : ${table.page.content}">
+          <td th:text="${n.scheduledAt}">—</td>
+          <td><span class="badge" th:text="${n.type}">ADMIN</span></td>
+          <td>
+            <span class="badge" th:classappend="${n.status == 'SENT'} ? 'brand' : (${n.status == 'CANCELLED' or n.status == 'FAILED'} ? 'danger' : '')"
+                  th:text="${n.status}">PENDING</span>
+          </td>
+          <td th:text="${n.target}">Trip</td>
+          <td th:text="${n.title}">—</td>
+          <td>
+            <form th:if="${n.pending}" th:action="@{/admin/notifications/{rid}/cancel(rid=${n.rid})}" method="post">
+              <button class="btn danger" type="submit">Cancel</button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${table.page.totalElements == 0}">
+          <td colspan="6" class="muted">No notifications yet.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div th:replace="~{admin/fragments :: dtPager(${table})}"></div>
+    <div th:replace="~{admin/fragments :: footer}"></div>
+  </main>
+</div>
+</body>
+</html>
