@@ -117,6 +117,17 @@ public class AdminNotificationService {
         return devices;
     }
 
+    /** Cancel every still-pending, already-due notification at once (clears a stuck backlog). */
+    @Transactional
+    public int cancelOverduePending(Long actorId) {
+        int count = repository.cancelOverduePending(Instant.now());
+        if (count > 0) {
+            adminService.audit(actorId, "NOTIFICATION_CANCEL_OVERDUE", "NOTIFICATION", null,
+                    "count=" + count);
+        }
+        return count;
+    }
+
     /** Cancel a pending notification (e.g. an auto-generated reminder) by rid. */
     @Transactional
     public void cancel(Long actorId, String rid) {

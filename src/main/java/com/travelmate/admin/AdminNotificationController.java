@@ -71,6 +71,14 @@ public class AdminNotificationController {
         return "redirect:/admin/notifications";
     }
 
+    @PostMapping("/cancel-overdue")
+    public String cancelOverdue(Principal principal, RedirectAttributes ra) {
+        int count = service.cancelOverduePending(currentAdminId(principal));
+        ra.addFlashAttribute("flash", count + " overdue pending notification(s) cancelled.");
+        ra.addFlashAttribute("flashType", "ok");
+        return "redirect:/admin/notifications";
+    }
+
     @PostMapping("/{rid}/cancel")
     public String cancel(@PathVariable String rid, Principal principal, RedirectAttributes ra) {
         try {

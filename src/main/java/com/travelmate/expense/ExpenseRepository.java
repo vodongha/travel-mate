@@ -1,5 +1,7 @@
 package com.travelmate.expense;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,6 +13,10 @@ import java.util.Optional;
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     List<Expense> findByTripIdOrderBySpentAtDescIdDesc(Long tripId);
+
+    /** Admin search over the title (case-insensitive); empty q matches all. */
+    @Query("select e from Expense e where :q = '' or lower(e.title) like lower(concat('%', :q, '%'))")
+    Page<Expense> search(@Param("q") String q, Pageable pageable);
 
     /** Used by settlement (paidFromFund=false: personal debt) and the fund balance (true). */
     List<Expense> findByTripIdAndPaidFromFund(Long tripId, boolean paidFromFund);
