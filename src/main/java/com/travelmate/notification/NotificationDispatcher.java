@@ -10,8 +10,10 @@ import com.travelmate.user.UserDevice;
 import com.travelmate.user.UserDeviceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -36,45 +38,75 @@ public class NotificationDispatcher {
     private final FcmSender fcmSender;
     private final NotificationMessages messages;
     private final ObjectMapper objectMapper;
+    // Self-reference so dispatchOne() runs through the Spring proxy (its own REQUIRES_NEW tx).
+    private final ObjectProvider<NotificationDispatcher> self;
 
     public NotificationDispatcher(ScheduledNotificationRepository repository,
                                   TripMemberRepository tripMemberRepository,
                                   UserDeviceRepository userDeviceRepository,
                                   FcmSender fcmSender,
                                   NotificationMessages messages,
-                                  ObjectMapper objectMapper) {
+                                  ObjectMapper objectMapper,
+                                  ObjectProvider<NotificationDispatcher> self) {
         this.repository = repository;
         this.tripMemberRepository = tripMemberRepository;
         this.userDeviceRepository = userDeviceRepository;
         this.fcmSender = fcmSender;
         this.messages = messages;
         this.objectMapper = objectMapper;
+        this.self = self;
     }
 
-    /** Send everything due at or before {@code now}; returns how many rows were delivered. */
-    @Transactional
+    /**
+     * Send everything due at or before {@code now}; returns how many rows were delivered. Each row is
+     * dispatched in its OWN transaction (see {@link #dispatchOne}) so one row's failure can't roll
+     * back the others' SENT status — which would otherwise make the whole batch redeliver every poll.
+     */
     public int dispatchDue(Instant now) {
-        List<ScheduledNotification> due = repository
-                .findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
-                        NotificationStatus.PENDING, now, Limit.of(BATCH));
+        List<Long> dueIds = dueIds(now);
         int delivered = 0;
-        for (ScheduledNotification n : due) {
-            try {
-                for (Long userId : recipients(n)) {
-                    for (UserDevice device : userDeviceRepository.findByUserId(userId)) {
-                        fcmSender.send(device.getFcmToken(),
-                                localize(n.getPayload(), device.getLocale()));
-                    }
-                }
-                n.setStatus(NotificationStatus.SENT);
-                n.setSentAt(now);
+        for (Long id : dueIds) {
+            if (self.getObject().dispatchOne(id, now)) {
                 delivered++;
-            } catch (RuntimeException ex) {
-                log.warn("Failed to dispatch notification {}: {}", n.getId(), ex.toString());
-                n.setStatus(NotificationStatus.FAILED);
             }
         }
         return delivered;
+    }
+
+    /** Ids of due, still-pending notifications (read-only). */
+    @Transactional(readOnly = true)
+    public List<Long> dueIds(Instant now) {
+        return repository
+                .findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
+                        NotificationStatus.PENDING, now, Limit.of(BATCH))
+                .stream().map(ScheduledNotification::getId).toList();
+    }
+
+    /**
+     * Dispatch one notification in its own transaction. Re-checks it is still PENDING (idempotent —
+     * a concurrent poll or retry can't double-send), flips it to SENT on success or FAILED on a send
+     * error, and commits that terminal status independently of every other row.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean dispatchOne(Long id, Instant now) {
+        ScheduledNotification n = repository.findById(id).orElse(null);
+        if (n == null || n.getStatus() != NotificationStatus.PENDING) {
+            return false;
+        }
+        try {
+            for (Long userId : recipients(n)) {
+                for (UserDevice device : userDeviceRepository.findByUserId(userId)) {
+                    fcmSender.send(device.getFcmToken(), localize(n.getPayload(), device.getLocale()));
+                }
+            }
+            n.setStatus(NotificationStatus.SENT);
+            n.setSentAt(now);
+            return true;
+        } catch (RuntimeException ex) {
+            log.warn("Failed to dispatch notification {}: {}", n.getId(), ex.toString());
+            n.setStatus(NotificationStatus.FAILED);
+            return false;
+        }
     }
 
     /**
