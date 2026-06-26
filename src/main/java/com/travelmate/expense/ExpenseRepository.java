@@ -18,6 +18,11 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("select e from Expense e where :q = '' or lower(e.title) like lower(concat('%', :q, '%'))")
     Page<Expense> search(@Param("q") String q, Pageable pageable);
 
+    /** Admin search scoped to one trip (the Expenses tab on the trip detail page). */
+    @Query("select e from Expense e where e.tripId = :tripId "
+            + "and (:q = '' or lower(e.title) like lower(concat('%', :q, '%')))")
+    Page<Expense> searchByTrip(@Param("tripId") Long tripId, @Param("q") String q, Pageable pageable);
+
     /** Used by settlement (paidFromFund=false: personal debt) and the fund balance (true). */
     List<Expense> findByTripIdAndPaidFromFund(Long tripId, boolean paidFromFund);
 

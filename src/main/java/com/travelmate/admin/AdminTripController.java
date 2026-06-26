@@ -53,8 +53,7 @@ public class AdminTripController {
     public String detail(@PathVariable String rid, Principal principal, Model model) {
         Trip trip = tripRepository.findByRid(rid)
                 .orElseThrow(() -> new AdminActionException("Trip not found."));
-        common(principal, model);
-        model.addAttribute("t", trip);
+        TripTabs.common(model, principal, adminService, trip, "overview");
         model.addAttribute("memberCount", tripMemberRepository.findByTripId(trip.getId()).size());
         return "admin/trips/detail";
     }

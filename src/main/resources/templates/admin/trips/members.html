@@ -3,10 +3,13 @@
 <head th:replace="~{admin/fragments :: head('Members')}"></head>
 <body>
 <div class="layout">
-  <div th:replace="~{admin/fragments :: sidebar('members')}"></div>
+  <div th:replace="~{admin/fragments :: sidebar('trips')}"></div>
   <div class="content">
-    <div th:replace="~{admin/fragments :: header('Manage', 'Members')}"></div>
+    <div th:replace="~{admin/fragments :: header('Manage', ${t.name} + ' · Members')}"></div>
     <main class="main">
+
+    <div th:replace="~{admin/fragments :: tripTabs(${t}, ${activeTab})}"></div>
+
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
@@ -18,7 +21,6 @@
           <th>Email</th>
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Role', 'role')}"></th>
           <th>Kind</th>
-          <th>Trip</th>
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Joined', 'joinedAt')}"></th>
           <th></th>
         </tr>
@@ -29,17 +31,16 @@
           <td th:text="${m.email}">—</td>
           <td><span class="badge" th:text="${m.role}">OWNER</span></td>
           <td><span th:text="${m.ghost} ? 'Ghost' : 'Account'">Account</span></td>
-          <td th:text="${m.trip}">Trip</td>
           <td th:text="${m.joinedAt}">—</td>
           <td>
-            <form th:if="${m.ghost}" th:action="@{/admin/members/{rid}/delete(rid=${m.rid})}" method="post"
+            <form th:if="${m.ghost}" th:action="@{/admin/trips/{tripRid}/members/{rid}/delete(tripRid=${t.rid},rid=${m.rid})}" method="post"
                   onsubmit="return confirm('Remove this ghost member?');">
               <button class="btn danger" type="submit">Remove</button>
             </form>
           </td>
         </tr>
         <tr th:if="${table.page.totalElements == 0}">
-          <td colspan="7" class="muted">No members match.</td>
+          <td colspan="6" class="muted">No members match.</td>
         </tr>
       </tbody>
     </table>

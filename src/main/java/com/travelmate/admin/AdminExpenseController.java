@@ -4,7 +4,6 @@ import com.travelmate.expense.Expense;
 import com.travelmate.expense.ExpenseRepository;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripRepository;
-import com.travelmate.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,13 +18,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-/** Admin view of expenses across all trips: searchable/sortable list + soft-delete. */
+/** The Expenses tab on a trip's detail page: searchable/sortable list + soft-delete. */
 @Controller
-@RequestMapping("/admin/expenses")
+@RequestMapping("/admin/trips/{tripRid}/expenses")
 public class AdminExpenseController {
 
     private static final Set<String> SORTS = Set.of("title", "amount", "spentAt", "category");
@@ -41,49 +38,44 @@ public class AdminExpenseController {
         this.adminService = adminService;
     }
 
-    /** A flattened row with the trip name resolved (hides internal ids). */
+    /** A flattened row (hides internal ids). */
     public record ExpenseRow(String rid, String title, BigDecimal amount, String currency,
-                             String category, String type, String trip, Instant spentAt) {
+                             String category, String type, Instant spentAt) {
     }
 
     @GetMapping
-    public String list(@RequestParam(defaultValue = "") String q, @RequestParam(required = false) String sort,
-                       @RequestParam(required = false) String dir, @RequestParam(required = false) Integer size,
-                       @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
+    public String list(@PathVariable String tripRid, @RequestParam(defaultValue = "") String q,
+                       @RequestParam(required = false) String sort, @RequestParam(required = false) String dir,
+                       @RequestParam(required = false) Integer size, @RequestParam(defaultValue = "0") int page,
+                       Principal principal, Model model) {
+        Trip trip = tripRepository.findByRid(tripRid)
+                .orElseThrow(() -> new AdminActionException("Trip not found."));
         int rows = DataTables.clampSize(size);
-        Page<Expense> expenses = expenseRepository.search(q,
+        Page<Expense> expenses = expenseRepository.searchByTrip(trip.getId(), q,
                 DataTables.pageable(page, rows, DataTables.sort(sort, dir, SORTS, "spentAt")));
-        Map<Long, String> tripNames = tripRepository
-                .findAllById(expenses.getContent().stream().map(Expense::getTripId).toList())
-                .stream().collect(Collectors.toMap(Trip::getId, Trip::getName));
         Page<ExpenseRow> data = expenses.map(e -> new ExpenseRow(e.getRid(), e.getTitle(),
                 e.getAmount(), e.getCurrency(), e.getCategory().name(), e.getExpenseType().name(),
-                tripNames.getOrDefault(e.getTripId(), "—"), e.getSpentAt()));
-        model.addAttribute("active", "expenses");
-        model.addAttribute("admin", adminName(principal));
-        model.addAttribute("table", DataTables.view("/admin/expenses", q, sort, dir, rows, data));
-        return "admin/expenses";
+                e.getSpentAt()));
+        TripTabs.common(model, principal, adminService, trip, "expenses");
+        model.addAttribute("table", DataTables.view("/admin/trips/" + tripRid + "/expenses", q, sort, dir, rows, data));
+        return "admin/trips/expenses";
     }
 
     @PostMapping("/{rid}/delete")
     @Transactional
-    public String delete(@PathVariable String rid, Principal principal, RedirectAttributes ra) {
+    public String delete(@PathVariable String tripRid, @PathVariable String rid, Principal principal,
+                         RedirectAttributes ra) {
         Expense e = expenseRepository.findByRid(rid)
                 .orElseThrow(() -> new AdminActionException("Expense not found."));
         e.setDeleted(true);
         adminService.audit(adminId(principal), "EXPENSE_DELETE", "EXPENSE", rid, "title=" + e.getTitle());
         ra.addFlashAttribute("flash", "Expense deleted.");
         ra.addFlashAttribute("flashType", "ok");
-        return "redirect:/admin/expenses";
-    }
-
-    private String adminName(Principal principal) {
-        return principal == null ? "" :
-                adminService.findAdminByEmail(principal.getName()).map(User::getName).orElse(principal.getName());
+        return "redirect:/admin/trips/" + tripRid + "/expenses";
     }
 
     private Long adminId(Principal principal) {
-        return adminService.findAdminByEmail(principal.getName()).map(User::getId)
+        return adminService.findAdminByEmail(principal.getName()).map(com.travelmate.user.User::getId)
                 .orElseThrow(() -> new AdminActionException("Not signed in."));
     }
 }

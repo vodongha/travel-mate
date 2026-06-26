@@ -3,10 +3,13 @@
 <head th:replace="~{admin/fragments :: head('Expenses')}"></head>
 <body>
 <div class="layout">
-  <div th:replace="~{admin/fragments :: sidebar('expenses')}"></div>
+  <div th:replace="~{admin/fragments :: sidebar('trips')}"></div>
   <div class="content">
-    <div th:replace="~{admin/fragments :: header('Manage', 'Expenses')}"></div>
+    <div th:replace="~{admin/fragments :: header('Manage', ${t.name} + ' · Expenses')}"></div>
     <main class="main">
+
+    <div th:replace="~{admin/fragments :: tripTabs(${t}, ${activeTab})}"></div>
+
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
@@ -18,7 +21,6 @@
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Amount', 'amount')}"></th>
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Category', 'category')}"></th>
           <th>Type</th>
-          <th>Trip</th>
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Spent at', 'spentAt')}"></th>
           <th></th>
         </tr>
@@ -29,17 +31,16 @@
           <td th:text="${e.amount} + ' ' + ${e.currency}">100000 VND</td>
           <td><span class="badge" th:text="${e.category}">FOOD</span></td>
           <td th:text="${e.type}">PLANNED</td>
-          <td th:text="${e.trip}">Trip</td>
           <td th:text="${e.spentAt}">—</td>
           <td>
-            <form th:action="@{/admin/expenses/{rid}/delete(rid=${e.rid})}" method="post"
+            <form th:action="@{/admin/trips/{tripRid}/expenses/{rid}/delete(tripRid=${t.rid},rid=${e.rid})}" method="post"
                   onsubmit="return confirm('Delete this expense? It is removed from the trip totals.');">
               <button class="btn danger" type="submit">Delete</button>
             </form>
           </td>
         </tr>
         <tr th:if="${table.page.totalElements == 0}">
-          <td colspan="7" class="muted">No expenses match.</td>
+          <td colspan="6" class="muted">No expenses match.</td>
         </tr>
       </tbody>
     </table>
