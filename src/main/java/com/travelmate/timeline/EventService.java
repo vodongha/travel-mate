@@ -112,6 +112,9 @@ public class EventService {
                 pruneOrphanPlace(oldPlaceId, event.getId());
             }
         }
+        if (request.note() != null) {
+            event.setNote(request.note().isBlank() ? null : request.note());
+        }
         validateTimes(event.getStartTime(), event.getEndTime());
         notificationService.rescheduleEvent(trip, event);
         return EventResponse.from(event, placeRidOf(event.getPlaceId()));

@@ -55,6 +55,18 @@ class PlanningIT extends AbstractIntegrationTest {
                 Map.of("title", "Sunrise hike"), owner).getBody().get("data");
         assertThat(patched.get("title").asText()).isEqualTo("Sunrise hike");
 
+        // patching the note must persist it (and an empty string clears it) — for every category,
+        // not just the one a user happened to test it on.
+        JsonNode noted = patch("/api/v1/trips/" + tripRid + "/events/" + eventRid,
+                Map.of("note", "Bring cash, card not accepted"), owner).getBody().get("data");
+        assertThat(noted.get("note").asText()).isEqualTo("Bring cash, card not accepted");
+        JsonNode renoted = patch("/api/v1/trips/" + tripRid + "/events/" + eventRid,
+                Map.of("note", "No cash needed after all"), owner).getBody().get("data");
+        assertThat(renoted.get("note").asText()).isEqualTo("No cash needed after all");
+        JsonNode clearedNote = patch("/api/v1/trips/" + tripRid + "/events/" + eventRid,
+                Map.of("note", ""), owner).getBody().get("data");
+        assertThat(clearedNote.get("note").isNull()).isTrue();
+
         assertThat(delete("/api/v1/trips/" + tripRid + "/events/" + eventRid, owner).getStatusCode())
                 .isEqualTo(HttpStatus.NO_CONTENT);
         assertThat(get("/api/v1/trips/" + tripRid + "/events", owner).getBody().get("data").size())
