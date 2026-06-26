@@ -5,6 +5,7 @@ import com.travelmate.admin.ops.OpsService;
 import com.travelmate.admin.ops.OpsService.OpsSnapshot;
 import com.travelmate.common.money.ExchangeRateCache;
 import com.travelmate.expense.ExpenseRepository;
+import com.travelmate.ticket.TicketRepository;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripMemberRepository;
 import com.travelmate.trip.TripRepository;
@@ -75,6 +76,9 @@ class AdminTemplatesRenderTest {
         when(userRepository.findAllById(any())).thenReturn(List.of());
         ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
         when(expenseRepository.search(any(), any())).thenReturn(Page.empty());
+        TicketRepository ticketRepository = mock(TicketRepository.class);
+        when(ticketRepository.search(any(), any())).thenReturn(Page.empty());
+        when(tripMemberRepository.search(any(), any())).thenReturn(Page.empty());
 
         mvc = MockMvcBuilders
                 .standaloneSetup(new AdminController(adminService, adminUserService),
@@ -84,7 +88,9 @@ class AdminTemplatesRenderTest {
                         new AdminTripController(tripRepository, tripMemberRepository, adminService),
                         new AdminRatesController(rateCache, adminService),
                         new AdminDeviceController(deviceRepository, userRepository, adminService),
-                        new AdminExpenseController(expenseRepository, tripRepository, adminService))
+                        new AdminExpenseController(expenseRepository, tripRepository, adminService),
+                        new AdminTicketController(ticketRepository, tripRepository, adminService),
+                        new AdminMemberController(tripMemberRepository, tripRepository, adminService))
                 .setViewResolvers(thymeleafViewResolver())
                 .build();
     }
@@ -118,6 +124,10 @@ class AdminTemplatesRenderTest {
         renders("/admin/devices?sort=platform&dir=asc&size=50");
         renders("/admin/expenses");
         renders("/admin/expenses?q=food&sort=amount&dir=desc");
+        renders("/admin/tickets");
+        renders("/admin/tickets?q=flight&sort=ticketType&dir=desc");
+        renders("/admin/members");
+        renders("/admin/members?q=alice&sort=role&dir=asc&size=10");
     }
 
     private static ThymeleafViewResolver thymeleafViewResolver() {
