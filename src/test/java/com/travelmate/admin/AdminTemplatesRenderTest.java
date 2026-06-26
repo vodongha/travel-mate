@@ -4,6 +4,7 @@ import com.travelmate.admin.ops.OpsController;
 import com.travelmate.admin.ops.OpsService;
 import com.travelmate.admin.ops.OpsService.OpsSnapshot;
 import com.travelmate.common.money.ExchangeRateCache;
+import com.travelmate.expense.ExpenseRepository;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripMemberRepository;
 import com.travelmate.trip.TripRepository;
@@ -72,6 +73,8 @@ class AdminTemplatesRenderTest {
                 .thenReturn(new ExchangeRateCache.Snapshot("VND", Instant.now(), List.of()));
         when(deviceRepository.search(any(), any())).thenReturn(Page.empty());
         when(userRepository.findAllById(any())).thenReturn(List.of());
+        ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
+        when(expenseRepository.search(any(), any())).thenReturn(Page.empty());
 
         mvc = MockMvcBuilders
                 .standaloneSetup(new AdminController(adminService, adminUserService),
@@ -80,7 +83,8 @@ class AdminTemplatesRenderTest {
                                 new com.fasterxml.jackson.databind.ObjectMapper()),
                         new AdminTripController(tripRepository, tripMemberRepository, adminService),
                         new AdminRatesController(rateCache, adminService),
-                        new AdminDeviceController(deviceRepository, userRepository, adminService))
+                        new AdminDeviceController(deviceRepository, userRepository, adminService),
+                        new AdminExpenseController(expenseRepository, tripRepository, adminService))
                 .setViewResolvers(thymeleafViewResolver())
                 .build();
     }
@@ -112,6 +116,8 @@ class AdminTemplatesRenderTest {
         renders("/admin/rates");
         renders("/admin/devices");
         renders("/admin/devices?sort=platform&dir=asc&size=50");
+        renders("/admin/expenses");
+        renders("/admin/expenses?q=food&sort=amount&dir=desc");
     }
 
     private static ThymeleafViewResolver thymeleafViewResolver() {

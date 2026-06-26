@@ -3,6 +3,7 @@ package com.travelmate.admin;
 import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripMemberRepository;
 import com.travelmate.trip.TripRepository;
+import com.travelmate.trip.TripType;
 import com.travelmate.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
@@ -58,6 +59,36 @@ public class AdminTripController {
         return "admin/trips/detail";
     }
 
+    @PostMapping("/{rid}/edit")
+    @Transactional
+    public String edit(@PathVariable String rid, @RequestParam String name,
+                       @RequestParam(required = false) String destination,
+                       @RequestParam(required = false) String startDate,
+                       @RequestParam(required = false) String endDate,
+                       @RequestParam(required = false) String tripType,
+                       Principal principal, RedirectAttributes ra) {
+        Trip trip = tripRepository.findByRid(rid)
+                .orElseThrow(() -> new AdminActionException("Trip not found."));
+        try {
+            if (name != null && !name.isBlank()) {
+                trip.setName(name.trim());
+            }
+            trip.setDestination(blankToNull(destination));
+            trip.setStartDate(parseDate(startDate));
+            trip.setEndDate(parseDate(endDate));
+            if (tripType != null && !tripType.isBlank()) {
+                trip.setTripType(TripType.valueOf(tripType));
+            }
+            adminService.audit(adminId(principal), "TRIP_EDIT", "TRIP", rid, "name=" + trip.getName());
+            ra.addFlashAttribute("flash", "Trip updated.");
+            ra.addFlashAttribute("flashType", "ok");
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("flash", "Invalid input: " + e.getMessage());
+            ra.addFlashAttribute("flashType", "error");
+        }
+        return "redirect:/admin/trips/" + rid;
+    }
+
     @PostMapping("/{rid}/delete")
     @Transactional
     public String delete(@PathVariable String rid, Principal principal, RedirectAttributes ra) {
@@ -68,6 +99,14 @@ public class AdminTripController {
         ra.addFlashAttribute("flash", "Trip deleted.");
         ra.addFlashAttribute("flashType", "ok");
         return "redirect:/admin/trips";
+    }
+
+    private static String blankToNull(String s) {
+        return s == null || s.isBlank() ? null : s.trim();
+    }
+
+    private static java.time.LocalDate parseDate(String s) {
+        return s == null || s.isBlank() ? null : java.time.LocalDate.parse(s.trim());
     }
 
     private void common(Principal principal, Model model) {

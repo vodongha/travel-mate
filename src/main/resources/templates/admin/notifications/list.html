@@ -11,6 +11,10 @@
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div class="toolbar" style="justify-content:flex-end">
+      <form method="post" th:action="@{/admin/notifications/cancel-overdue}"
+            onsubmit="return confirm('Cancel all overdue pending notifications?');">
+        <button class="btn danger" type="submit">Cancel overdue pending</button>
+      </form>
       <a class="btn brand" th:href="@{/admin/notifications/new}">Compose &amp; push</a>
     </div>
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
