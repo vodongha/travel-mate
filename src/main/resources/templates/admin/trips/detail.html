@@ -8,6 +8,8 @@
     <div th:replace="~{admin/fragments :: header('Manage', ${t.name})}"></div>
     <main class="main">
 
+    <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
+
     <div class="panel" style="max-width:560px">
       <h2>Trip</h2>
       <dl class="kv">
@@ -20,6 +22,21 @@
         <dt>Created</dt><dd th:text="${t.createdAt}">—</dd>
         <dt>Rid</dt><dd th:text="${t.rid}">—</dd>
       </dl>
+      <hr>
+      <h2>Edit</h2>
+      <form th:action="@{/admin/trips/{rid}/edit(rid=${t.rid})}" method="post">
+        <label>Name<input type="text" name="name" th:value="${t.name}" required></label>
+        <label>Destination<input type="text" name="destination" th:value="${t.destination}"></label>
+        <label>Start date<input type="date" name="startDate" th:value="${t.startDate}"></label>
+        <label>End date<input type="date" name="endDate" th:value="${t.endDate}"></label>
+        <label>Type
+          <select name="tripType">
+            <option th:each="ty : ${T(com.travelmate.trip.TripType).values()}"
+                    th:value="${ty}" th:text="${ty}" th:selected="${ty == t.tripType}">OTHER</option>
+          </select>
+        </label>
+        <button class="btn brand" type="submit">Save changes</button>
+      </form>
       <hr>
       <form th:action="@{/admin/trips/{rid}/delete(rid=${t.rid})}" method="post"
             onsubmit="return confirm('Delete this trip? It is hidden from all members.');">

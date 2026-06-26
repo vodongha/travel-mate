@@ -21,6 +21,13 @@ public interface ScheduledNotificationRepository extends JpaRepository<Scheduled
     org.springframework.data.domain.Page<ScheduledNotification> search(
             @Param("q") String q, org.springframework.data.domain.Pageable pageable);
 
+    /** Bulk-cancel every still-pending notification already due — clears a stuck backlog. */
+    @Modifying
+    @Query("update ScheduledNotification n set n.status = com.travelmate.notification.NotificationStatus.CANCELLED "
+            + "where n.status = com.travelmate.notification.NotificationStatus.PENDING "
+            + "and n.scheduledAt <= :now and n.deleted = false")
+    int cancelOverduePending(@Param("now") Instant now);
+
     /** Due, undelivered notifications for the dispatch job (oldest first, capped). */
     List<ScheduledNotification> findByStatusAndScheduledAtLessThanEqualOrderByScheduledAtAsc(
             NotificationStatus status, Instant cutoff, Limit limit);
