@@ -70,15 +70,15 @@ class AdminTemplatesRenderTest {
         trip.setBaseCurrency("VND");
         when(tripRepository.findByRid(any())).thenReturn(java.util.Optional.of(trip));
         when(tripMemberRepository.findByTripId(any())).thenReturn(List.of());
+        when(tripMemberRepository.searchByTrip(any(), any(), any())).thenReturn(Page.empty());
         when(rateCache.current())
                 .thenReturn(new ExchangeRateCache.Snapshot("VND", Instant.now(), List.of()));
         when(deviceRepository.search(any(), any())).thenReturn(Page.empty());
         when(userRepository.findAllById(any())).thenReturn(List.of());
         ExpenseRepository expenseRepository = mock(ExpenseRepository.class);
-        when(expenseRepository.search(any(), any())).thenReturn(Page.empty());
+        when(expenseRepository.searchByTrip(any(), any(), any())).thenReturn(Page.empty());
         TicketRepository ticketRepository = mock(TicketRepository.class);
-        when(ticketRepository.search(any(), any())).thenReturn(Page.empty());
-        when(tripMemberRepository.search(any(), any())).thenReturn(Page.empty());
+        when(ticketRepository.searchByTrip(any(), any(), any())).thenReturn(Page.empty());
 
         mvc = MockMvcBuilders
                 .standaloneSetup(new AdminController(adminService, adminUserService),
@@ -119,15 +119,15 @@ class AdminTemplatesRenderTest {
         renders("/admin/trips");
         renders("/admin/trips?q=kyoto&sort=name&dir=asc");
         renders("/admin/trips/some-rid");
+        renders("/admin/trips/some-rid/members");
+        renders("/admin/trips/some-rid/members?q=alice&sort=role&dir=asc&size=10");
+        renders("/admin/trips/some-rid/expenses");
+        renders("/admin/trips/some-rid/expenses?q=food&sort=amount&dir=desc");
+        renders("/admin/trips/some-rid/tickets");
+        renders("/admin/trips/some-rid/tickets?q=flight&sort=ticketType&dir=desc");
         renders("/admin/rates");
         renders("/admin/devices");
         renders("/admin/devices?sort=platform&dir=asc&size=50");
-        renders("/admin/expenses");
-        renders("/admin/expenses?q=food&sort=amount&dir=desc");
-        renders("/admin/tickets");
-        renders("/admin/tickets?q=flight&sort=ticketType&dir=desc");
-        renders("/admin/members");
-        renders("/admin/members?q=alice&sort=role&dir=asc&size=10");
     }
 
     private static ThymeleafViewResolver thymeleafViewResolver() {

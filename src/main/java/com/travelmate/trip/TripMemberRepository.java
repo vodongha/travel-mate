@@ -17,6 +17,12 @@ public interface TripMemberRepository extends JpaRepository<TripMember, Long> {
             + "or lower(m.email) like lower(concat('%', :q, '%'))")
     Page<TripMember> search(@Param("q") String q, Pageable pageable);
 
+    /** Admin search scoped to one trip (the Members tab on the trip detail page). */
+    @Query("select m from TripMember m where m.tripId = :tripId and (:q = '' "
+            + "or lower(m.displayName) like lower(concat('%', :q, '%')) "
+            + "or lower(m.email) like lower(concat('%', :q, '%')))")
+    Page<TripMember> searchByTrip(@Param("tripId") Long tripId, @Param("q") String q, Pageable pageable);
+
     List<TripMember> findByTripId(Long tripId);
 
     Optional<TripMember> findByTripIdAndUserId(Long tripId, Long userId);

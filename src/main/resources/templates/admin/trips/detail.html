@@ -8,6 +8,8 @@
     <div th:replace="~{admin/fragments :: header('Manage', ${t.name})}"></div>
     <main class="main">
 
+    <div th:replace="~{admin/fragments :: tripTabs(${t}, ${activeTab})}"></div>
+
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div class="panel" style="max-width:560px">

@@ -20,4 +20,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     /** Admin search over the title; empty q matches all. */
     @Query("select t from Ticket t where :q = '' or lower(t.title) like lower(concat('%', :q, '%'))")
     Page<Ticket> search(@Param("q") String q, Pageable pageable);
+
+    /** Admin search scoped to one trip (the Tickets tab on the trip detail page). */
+    @Query("select t from Ticket t where t.tripId = :tripId "
+            + "and (:q = '' or lower(t.title) like lower(concat('%', :q, '%')))")
+    Page<Ticket> searchByTrip(@Param("tripId") Long tripId, @Param("q") String q, Pageable pageable);
 }

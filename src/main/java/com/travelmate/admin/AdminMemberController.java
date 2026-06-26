@@ -4,7 +4,6 @@ import com.travelmate.trip.Trip;
 import com.travelmate.trip.TripMember;
 import com.travelmate.trip.TripMemberRepository;
 import com.travelmate.trip.TripRepository;
-import com.travelmate.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,17 +17,15 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
- * Admin view of trip members across all trips. Ghost members (no account yet) can be removed; a
- * member with a real account is left alone here — leaving/removing a real member is a trip-owner
- * action in the app, not an admin one, since it can shift money references.
+ * The Members tab on a trip's detail page. Ghost members (no account yet) can be removed; a member
+ * with a real account is left alone here — leaving/removing a real member is a trip-owner action in
+ * the app, not an admin one, since it can shift money references.
  */
 @Controller
-@RequestMapping("/admin/members")
+@RequestMapping("/admin/trips/{tripRid}/members")
 public class AdminMemberController {
 
     private static final Set<String> SORTS = Set.of("displayName", "role", "joinedAt");
@@ -44,33 +41,32 @@ public class AdminMemberController {
         this.adminService = adminService;
     }
 
-    /** A flattened row with the trip name resolved (hides internal ids). */
+    /** A flattened row (hides internal ids). */
     public record MemberRow(String rid, String displayName, String email, String role, boolean ghost,
-                            String trip, Instant joinedAt) {
+                            Instant joinedAt) {
     }
 
     @GetMapping
-    public String list(@RequestParam(defaultValue = "") String q, @RequestParam(required = false) String sort,
-                       @RequestParam(required = false) String dir, @RequestParam(required = false) Integer size,
-                       @RequestParam(defaultValue = "0") int page, Principal principal, Model model) {
+    public String list(@PathVariable String tripRid, @RequestParam(defaultValue = "") String q,
+                       @RequestParam(required = false) String sort, @RequestParam(required = false) String dir,
+                       @RequestParam(required = false) Integer size, @RequestParam(defaultValue = "0") int page,
+                       Principal principal, Model model) {
+        Trip trip = tripRepository.findByRid(tripRid)
+                .orElseThrow(() -> new AdminActionException("Trip not found."));
         int rows = DataTables.clampSize(size);
-        Page<TripMember> members = tripMemberRepository.search(q,
+        Page<TripMember> members = tripMemberRepository.searchByTrip(trip.getId(), q,
                 DataTables.pageable(page, rows, DataTables.sort(sort, dir, SORTS, "joinedAt")));
-        Map<Long, String> tripNames = tripRepository
-                .findAllById(members.getContent().stream().map(TripMember::getTripId).toList())
-                .stream().collect(Collectors.toMap(Trip::getId, Trip::getName));
         Page<MemberRow> data = members.map(m -> new MemberRow(m.getRid(), m.getDisplayName(),
-                m.getEmail() == null ? "—" : m.getEmail(), m.getRole().name(), m.isGhost(),
-                tripNames.getOrDefault(m.getTripId(), "—"), m.getJoinedAt()));
-        model.addAttribute("active", "members");
-        model.addAttribute("admin", adminName(principal));
-        model.addAttribute("table", DataTables.view("/admin/members", q, sort, dir, rows, data));
-        return "admin/members";
+                m.getEmail() == null ? "—" : m.getEmail(), m.getRole().name(), m.isGhost(), m.getJoinedAt()));
+        TripTabs.common(model, principal, adminService, trip, "members");
+        model.addAttribute("table", DataTables.view("/admin/trips/" + tripRid + "/members", q, sort, dir, rows, data));
+        return "admin/trips/members";
     }
 
     @PostMapping("/{rid}/delete")
     @Transactional
-    public String delete(@PathVariable String rid, Principal principal, RedirectAttributes ra) {
+    public String delete(@PathVariable String tripRid, @PathVariable String rid, Principal principal,
+                         RedirectAttributes ra) {
         try {
             TripMember m = tripMemberRepository.findByRid(rid)
                     .orElseThrow(() -> new AdminActionException("Member not found."));
@@ -85,16 +81,11 @@ public class AdminMemberController {
             ra.addFlashAttribute("flash", e.getMessage());
             ra.addFlashAttribute("flashType", "error");
         }
-        return "redirect:/admin/members";
-    }
-
-    private String adminName(Principal principal) {
-        return principal == null ? "" :
-                adminService.findAdminByEmail(principal.getName()).map(User::getName).orElse(principal.getName());
+        return "redirect:/admin/trips/" + tripRid + "/members";
     }
 
     private Long adminId(Principal principal) {
-        return adminService.findAdminByEmail(principal.getName()).map(User::getId)
+        return adminService.findAdminByEmail(principal.getName()).map(com.travelmate.user.User::getId)
                 .orElseThrow(() -> new AdminActionException("Not signed in."));
     }
 }
