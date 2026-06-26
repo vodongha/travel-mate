@@ -3,10 +3,13 @@
 <head th:replace="~{admin/fragments :: head('Tickets')}"></head>
 <body>
 <div class="layout">
-  <div th:replace="~{admin/fragments :: sidebar('tickets')}"></div>
+  <div th:replace="~{admin/fragments :: sidebar('trips')}"></div>
   <div class="content">
-    <div th:replace="~{admin/fragments :: header('Manage', 'Tickets')}"></div>
+    <div th:replace="~{admin/fragments :: header('Manage', ${t.name} + ' · Tickets')}"></div>
     <main class="main">
+
+    <div th:replace="~{admin/fragments :: tripTabs(${t}, ${activeTab})}"></div>
+
     <div th:if="${flash}" class="flash" th:classappend="${flashType}" th:text="${flash}">message</div>
 
     <div th:replace="~{admin/fragments :: dtToolbar(${table})}"></div>
@@ -19,29 +22,27 @@
           <th th:replace="~{admin/fragments :: dtSortTh(${table}, 'Provider', 'provider')}"></th>
           <th>Seat</th>
           <th>Booking code</th>
-          <th>Trip</th>
           <th>Linked</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <tr th:each="t : ${table.page.content}">
-          <td th:text="${t.title}">Flight</td>
-          <td><span class="badge" th:text="${t.ticketType}">TRANSPORT</span></td>
-          <td th:text="${t.provider}">—</td>
-          <td th:text="${t.seat}">—</td>
-          <td th:text="${t.bookingCode}">—</td>
-          <td th:text="${t.trip}">Trip</td>
-          <td><span th:text="${t.linked} ? 'Yes' : 'No'">No</span></td>
+        <tr th:each="t2 : ${table.page.content}">
+          <td th:text="${t2.title}">Flight</td>
+          <td><span class="badge" th:text="${t2.ticketType}">TRANSPORT</span></td>
+          <td th:text="${t2.provider}">—</td>
+          <td th:text="${t2.seat}">—</td>
+          <td th:text="${t2.bookingCode}">—</td>
+          <td><span th:text="${t2.linked} ? 'Yes' : 'No'">No</span></td>
           <td>
-            <form th:action="@{/admin/tickets/{rid}/delete(rid=${t.rid})}" method="post"
+            <form th:action="@{/admin/trips/{tripRid}/tickets/{rid}/delete(tripRid=${t.rid},rid=${t2.rid})}" method="post"
                   onsubmit="return confirm('Delete this ticket?');">
               <button class="btn danger" type="submit">Delete</button>
             </form>
           </td>
         </tr>
         <tr th:if="${table.page.totalElements == 0}">
-          <td colspan="8" class="muted">No tickets match.</td>
+          <td colspan="7" class="muted">No tickets match.</td>
         </tr>
       </tbody>
     </table>

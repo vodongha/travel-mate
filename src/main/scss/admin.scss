@@ -410,6 +410,26 @@ th.dt-sortable {
   & + & { margin-left: 6px; }
 }
 
+// ── trip detail tab strip ──────────────────────────────────────────────────-
+.trip-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid $line;
+
+  a {
+    padding: 10px 14px;
+    color: $muted;
+    font-weight: 700;
+    font-size: 13.5px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+
+    &:hover { color: $text; }
+    &.active { color: $brand; border-bottom-color: $brand; }
+  }
+}
+
 // ── detail / panels / forms ───────────────────────────────────────────────--
 .detail-grid {
   display: grid;
