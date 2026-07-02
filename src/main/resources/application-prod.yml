@@ -4,9 +4,20 @@
 # Activate with SPRING_PROFILES_ACTIVE=prod. The schema/user is created once out-of-band
 # (scripts/create_schema.sql); Flyway owns the objects inside it.
 spring:
+  main:
+    # Defer bean creation until first use — HTTP server binds port 8000 in ~60s instead of ~10min.
+    # Flyway, HikariPool, and Hibernate still initialize before the first DB-touching request;
+    # the health check (/api/v1/ping) intentionally does NOT touch the DB so the machine is
+    # considered "up" while the DB warms in the background.
+    lazy-initialization: true
   datasource:
     hikari:
       connection-init-sql: ALTER SESSION SET CURRENT_SCHEMA = ${ORACLE_SCHEMA:TRAVEL_MATE}
+      # Don't fail startup if Oracle ADB is slow to wake — pool is lazy anyway.
+      initialization-fail-timeout: -1
+  jpa:
+    # Run Flyway migrations before Hibernate validates the schema (required ordering with lazy init).
+    defer-datasource-initialization: true
   flyway:
     schemas: ${ORACLE_SCHEMA:TRAVEL_MATE}
     default-schema: ${ORACLE_SCHEMA:TRAVEL_MATE}
