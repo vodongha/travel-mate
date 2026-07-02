@@ -31,7 +31,7 @@ primary_region = "sin"  # Singapore — closest to Oracle ADB (ap-singapore-1) a
     soft_limit = 150
 
 [[http_service.checks]]
-  grace_period = "40s"      # JVM + Flyway need a moment on cold start
+  grace_period = "720s"     # JVM + Oracle ADB wallet + HikariPool cold start can take ~10min
   interval = "30s"
   method = "GET"
   path = "/api/v1/ping"
