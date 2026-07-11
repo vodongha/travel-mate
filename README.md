@@ -8,12 +8,12 @@ budget vs actual spending**, a **shared fund**, and **who-owes-whom settlement**
 - **Backend:** Spring Boot 3.x · Java 21 (this repo) — REST API + serves the Flutter web client
 - **Database:** Oracle Autonomous Database (ADB) Free, via Flyway-managed schema
 - **Mobile/Web:** Flutter (Android + Web) — separate repo: [vodongha/travel-mate-app](https://github.com/vodongha/travel-mate-app)
-- **Live:** https://trippo.io.vn · API https://trippo-api.fly.dev/api/v1 · Android `vn.trippo.mate`
+- **Live:** https://trippo.io.vn (API under `/api/v1`, same origin) · Android `vn.trippo.mate`
 - **Docs:** full spec in [`docs/SPEC.md`](docs/SPEC.md) · contributor/agent guide in [CLAUDE.md](CLAUDE.md)
 
 > **Status: shipped — v1.0.0 in production.** The Maven / Spring Boot 3 / Java 21 backend (schema
-> `TRAVEL_MATE`) and the Flutter app (Android + Web) are complete and deployed on **Fly.io**
-> (`trippo-api`, region `sin`), which serves both the API at `/api/v1` and the bundled web client at
+> `TRAVEL_MATE`) and the Flutter app (Android + Web) are complete and **self-hosted with Docker on a
+> home server** behind a Cloudflare Tunnel, serving both the API at `/api/v1` and the bundled web client at
 > `/`. Covers auth, trips & members, planning, multi-currency money + splitting, shared fund &
 > settlement, dashboard + report, and scheduled FCM notifications. Integration tests run against a
 > docker-compose Oracle Free (`docker compose up -d` → `./mvnw verify`). The full source of truth is
@@ -69,7 +69,7 @@ The full module-by-module specification, DDL, and conventions live in [`docs/SPE
 | Exchange rates | Free provider (frankfurter.app / exchangerate.host), daily cache, manual override |
 | Errors | RFC 7807 `ProblemDetail` |
 | Tests | JUnit 5 + Oracle Free container (integration), unit tests for the Settlement Engine |
-| Host | **Fly.io** (`trippo-api`, region `sin`) — serves API `/api/v1` + the Flutter web client at `/` |
+| Host | **Self-hosted** (Docker) on a home server, public via **Cloudflare Tunnel** — serves API `/api/v1` + the Flutter web client at `/` |
 
 ---
 
@@ -130,7 +130,7 @@ several apps can share one ADB (mirrors the sibling `family-budget`). See `.env.
    self-service account deletion (`DELETE /users/me`), and an exchange-rate table
    (`GET /rates`, `POST /rates/refresh`, 12h refresh) — the slice the Flutter app needs.
 10. **M9 — Flutter app (Android + Web) ✅.**
-11. **Shipped ✅:** v1.0.0 live on Fly.io (API + bundled web at one origin); Android `vn.trippo.mate`.
+11. **Shipped ✅:** v1.0.0 live, self-hosted (API + bundled web at one origin); Android `vn.trippo.mate`.
     Post-launch: unified `Category` taxonomy, polymorphic expense/ticket→itinerary links,
     multi-member & group tickets, per-member checklist, member auto-link/merge, place↔itinerary
     delete sync, read-only after a trip ends (migrations V1–V19).

@@ -12,9 +12,9 @@ fund**, and **who-owes-whom settlement** across **multiple currencies**.
 - **Backend:** Spring Boot 3.x · Java 21 REST API (this repo)
 - **Mobile:** Flutter — separate repo: https://github.com/vodongha/travel-mate-app
 - **Database:** Oracle Autonomous Database (ADB) Free, Flyway-managed
-- **Host:** **Fly.io** (app `trippo-api`, region `sin`, 512MB) — serves the API at `/api/v1` **and**
-  the bundled Flutter web client at `/` (same origin). Live: https://trippo-api.fly.dev ·
-  https://trippo.io.vn. Android app is published as `vn.trippo.mate`.
+- **Host:** **Self-hosted** with Docker on a home server, public via **Cloudflare Tunnel** — serves the API at `/api/v1` **and**
+  the bundled Flutter web client at `/` (same origin). Live: https://trippo.io.vn. Android app is
+  published as `vn.trippo.mate`. Oracle ADB (cloud) unchanged.
 - **Status:** **Shipped — v1.0.0 in production.** Backend M1–M8 + the Flutter app (M9, Android + Web)
   are complete and deployed; this section now records the architecture, not a roadmap.
   - **M1** foundation: `BaseEntity`, JPA auditing, UUID v7, `MoneyService`, RFC 7807 envelope, Flyway.
@@ -191,22 +191,15 @@ see Open Decisions; don't leave orphaned references.
   cross-tz flights). Oracle `TIMESTAMP` carries no zone — set
   `spring.jpa.properties.hibernate.jdbc.time_zone=UTC` so the driver doesn't shift by the host tz.
 
-## Deployment (Fly.io)
+## Deployment (self-hosted)
 
-Single Fly.io app **`trippo-api`** (region `sin`, 512MB, `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=65`).
-It serves the API under `/api/v1` **and the bundled Flutter web client at `/`** (same origin → the
-web app needs no CORS; `SpaWebConfig` falls back to `index.html` for client-side routes, never for
-`/api/**` or real asset files).
+The backend is **self-hosted with Docker on a home server** (not Fly.io). Oracle ADB is unchanged (cloud). It serves the API under `/api/v1` **and the bundled Flutter web client at `/`** (same origin → the web app needs no CORS; `SpaWebConfig` falls back to `index.html` for client-side routes, never for `/api/**` or real asset files).
 
-- **CI/CD:** `.github/workflows/ci.yml` runs `./mvnw verify` against an Oracle Free service container
-  on `develop`. `deploy.yml` runs on push to `master` (and `workflow_dispatch`): it checks out the
-  **app repo's `master`**, builds the Flutter web with `--dart-define=SAME_ORIGIN=true`, bakes it into
-  `classpath:/static/`, then `flyctl deploy`. **An app-only release needs a backend (re)deploy** to
-  refresh the live web (`gh workflow run deploy.yml --repo vodongha/travel-mate --ref master`).
-- **Fly secrets:** `WALLET_TAR_B64` (Oracle wallet tar.gz, decoded by `scripts/fly_entrypoint.sh`),
-  `ORACLE_PASSWORD`, `FCM_CREDENTIALS_B64` (Firebase service account), `CORS_ALLOWED_ORIGINS`,
-  JWT secret + Google client-id. The `prod` profile uses schema `TRAVEL_MATE`.
-- The Oracle wallet and the Firebase service-account JSON are **never committed** (gitignored).
+- **Runtime:** `docker compose -f docker-compose.run.yml up -d --build` (host port 8001 → container 8000). The Oracle wallet is bind-mounted at `/app/wallet`; the app reads `DB_URL/DB_USERNAME/DB_PASSWORD`, profile `prod`, schema `TRAVEL_MATE`. (`docker-compose.yml` is the test-only Oracle Free container, not the app.)
+- **Public access:** a **Cloudflare Tunnel** routes `https://trippo.io.vn` → `localhost:8001`. No inbound ports are opened (residential ISP blocks 80/443); TLS is terminated at Cloudflare's edge.
+- **Web client:** the bundled Flutter web lives in `web-dist/` (gitignored). Rebuild from the app repo with `flutter build web --release --no-tree-shake-icons --dart-define=SAME_ORIGIN=true`, copy `build/web/.` → `web-dist/`, then rebuild the image. The home auto-deploy does **not** rebuild the web — refresh `web-dist/` manually when the app UI changes.
+- **CI/CD:** `ci.yml` runs `./mvnw verify` against an Oracle Free service container on `develop`. `deploy.yml` runs on push to `master` (and `workflow_dispatch`): after `verify`, the `deploy` job POSTs to the home-server webhook (`https://hooks.vodongha.id.vn/deploy/travel-mate`, `Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}`), which `git pull`s + rebuilds the container.
+- **Secrets/config** live in `.env` on the server (git-ignored): `ORACLE_PASSWORD`, `DB_URL`/`DB_USERNAME`, `JWT_SECRET`, and **`CORS_ALLOWED_ORIGINS=https://trippo.io.vn,https://www.trippo.io.vn`** (required — browsers send an `Origin` header even on same-origin POSTs, so with the CORS allow-list empty every web login/API call gets `403 Invalid CORS request`; mobile is unaffected). Optional `GOOGLE_CLIENT_ID` / `FCM_CREDENTIALS` (push). The Oracle wallet is bind-mounted, never committed (gitignored).
 
 ## Open decisions — settle these before/while coding (from spec review)
 
