@@ -41,39 +41,12 @@ jobs:
       - run: mvn -B verify
 
   deploy:
-    name: Deploy to Fly.io
+    name: Deploy to home server
     needs: [verify]
     runs-on: ubuntu-latest
     concurrency: deploy-group # prevent overlapping deploys
     steps:
-      - name: Checkout backend
-        uses: actions/checkout@v7
-
-      - name: Checkout app (web client)
-        uses: actions/checkout@v7
-        with:
-          repository: vodongha/travel-mate-app
-          ref: master
-          token: ${{ secrets.APP_REPO_TOKEN }}
-          path: app-src
-
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Build Flutter web (served same-origin by the backend)
-        working-directory: app-src
+      - name: Trigger home-server deploy (Cloudflare Tunnel webhook)
         run: |
-          flutter pub get
-          flutter build web --release --no-tree-shake-icons \
-            --dart-define=SAME_ORIGIN=true
-
-      - name: Stage web client into the image context
-        run: |
-          rm -rf web-dist && mkdir -p web-dist
-          cp -r app-src/build/web/. web-dist/
-
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only
-        env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          curl -fsS --max-time 30 -X POST https://hooks.vodongha.id.vn/deploy/travel-mate \
+            -H "Authorization: Bearer ${{ secrets.DEPLOY_TOKEN }}"

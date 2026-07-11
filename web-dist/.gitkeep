@@ -1,0 +1,1 @@
+Placeholder so Dockerfile COPY web-dist/ succeeds (API-only build; no bundled Flutter web client).
