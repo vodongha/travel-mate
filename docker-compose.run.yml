@@ -1,0 +1,24 @@
+# Local self-hosting compose for the TravelMate API (separate from the test-only
+# docker-compose.yml, which just starts a throwaway Oracle for integration tests).
+# Runs the Spring Boot app against the cloud Oracle ADB via the bind-mounted wallet.
+#   docker compose -f docker-compose.run.yml up -d --build
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: travelmate-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # The app reads DB_URL/DB_USERNAME/DB_PASSWORD (see application.yml).
+      # DB_PASSWORD mirrors ORACLE_PASSWORD from .env; TNS_ADMIN must be the
+      # in-container wallet path (the .env value is a Windows host path).
+      DB_PASSWORD: ${ORACLE_PASSWORD}
+      TNS_ADMIN: /app/wallet
+      WALLET_DIR: /app/wallet
+      APP_PUBLIC_URL: https://trippo.io.vn
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./wallet:/app/wallet:ro
